@@ -54,7 +54,7 @@ export function createMainWindow(): BrowserWindow {
 export function createCaptureWindow(): BrowserWindow {
   const window = new BrowserWindow({
     width: 560,
-    height: 120,
+    height: 340,
     show: false,
     frame: false,
     resizable: false,

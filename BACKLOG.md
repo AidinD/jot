@@ -28,12 +28,6 @@ Jot category ↔ Google Tasks list is not a clean 1:1:
 - A stable mapping table (jot id ↔ google id) is needed so renames don't
   duplicate.
 
-## Capture-field category quick-pick
-
-Let the quick-capture popover file a todo into a list without leaving the
-keyboard — e.g. a `#listname` token ("Ring tandläkaren #privat"). See the chat
-for the design sketch; small, does not depend on sync.
-
 ## Auto-update via GitHub
 Like Loom — needs `latest.yml` + an electron-builder publish config and a
 release-upload step. Optional.
