@@ -24,10 +24,10 @@ function loadRoute(window: BrowserWindow, htmlFile: string): void {
 
 export function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    width: 420,
-    height: 640,
-    minWidth: 340,
-    minHeight: 420,
+    width: 760,
+    height: 660,
+    minWidth: 600,
+    minHeight: 440,
     show: false,
     title: 'Jot',
     autoHideMenuBar: true,

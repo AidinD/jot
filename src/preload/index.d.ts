@@ -1,12 +1,17 @@
-import type { Todo } from '../renderer/src/shared/types'
+import type { JotState } from '../renderer/src/shared/types'
 
 interface JotBridge {
-  list: () => Promise<Todo[]>
-  add: (text: string) => Promise<Todo[]>
-  toggle: (id: string) => Promise<Todo[]>
-  remove: (id: string) => Promise<Todo[]>
-  clearCompleted: () => Promise<Todo[]>
-  onChanged: (callback: (todos: Todo[]) => void) => () => void
+  getState: () => Promise<JotState>
+  addTodo: (text: string, categoryId: string | null) => Promise<void>
+  toggleTodo: (id: string) => Promise<void>
+  removeTodo: (id: string) => Promise<void>
+  setTodoCategory: (id: string, categoryId: string | null) => Promise<void>
+  reorderTodos: (orderedVisibleIds: string[]) => Promise<void>
+  clearCompleted: () => Promise<void>
+  addCategory: (name: string) => Promise<string>
+  renameCategory: (id: string, name: string) => Promise<void>
+  removeCategory: (id: string) => Promise<void>
+  onChanged: (callback: (state: JotState) => void) => () => void
 }
 
 interface CaptureBridge {
