@@ -162,8 +162,8 @@ function registerIpc(): void {
     return store.removeCategory(id)
   })
 
-  ipcMain.handle('capture:submit', async (_event, text: string) => {
-    await store.addTodo(text, null)
+  ipcMain.handle('capture:submit', async (_event, text: string, categoryId: string | null) => {
+    await store.addTodo(text, categoryId)
     if (captureWindow !== null) {
       captureWindow.hide()
     }

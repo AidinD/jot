@@ -15,7 +15,7 @@ interface JotBridge {
 }
 
 interface CaptureBridge {
-  submit: (text: string) => Promise<void>
+  submit: (text: string, categoryId: string | null) => Promise<void>
   close: () => void
   onReset: (callback: () => void) => () => void
 }

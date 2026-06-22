@@ -44,8 +44,8 @@ const jotApi = {
 }
 
 const captureApi = {
-  submit: (text: string): Promise<void> => {
-    return ipcRenderer.invoke('capture:submit', text)
+  submit: (text: string, categoryId: string | null): Promise<void> => {
+    return ipcRenderer.invoke('capture:submit', text, categoryId)
   },
   close: (): void => {
     ipcRenderer.send('capture:close')

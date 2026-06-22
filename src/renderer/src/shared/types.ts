@@ -48,6 +48,6 @@ export interface JotApi {
  * Capture-window commands. The popover only submits a line and dismisses.
  */
 export interface CaptureApi {
-  submit: (text: string) => Promise<void>
+  submit: (text: string, categoryId: string | null) => Promise<void>
   close: () => void
 }
