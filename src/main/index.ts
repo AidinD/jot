@@ -1,0 +1,164 @@
+import { join } from 'path'
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray } from 'electron'
+import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { LocalJsonStorage } from './storage'
+import { TodoStore } from './store'
+import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
+
+const CAPTURE_SHORTCUT = 'Control+Alt+.'
+
+let mainWindow: BrowserWindow | null = null
+let captureWindow: BrowserWindow | null = null
+let tray: Tray | null = null
+
+const store = new TodoStore(new LocalJsonStorage())
+
+// Only one instance may own the global shortcut and the tray.
+const gotLock = app.requestSingleInstanceLock()
+if (!gotLock) {
+  app.quit()
+}
+
+function showMainWindow(): void {
+  if (mainWindow === null) {
+    return
+  }
+  mainWindow.show()
+  mainWindow.focus()
+}
+
+function toggleCaptureWindow(): void {
+  if (captureWindow === null) {
+    return
+  }
+  if (captureWindow.isVisible()) {
+    captureWindow.hide()
+    return
+  }
+  positionCaptureWindow(captureWindow)
+  captureWindow.show()
+  captureWindow.focus()
+  // Reset the input each time the popover opens.
+  captureWindow.webContents.send('capture:reset')
+}
+
+function broadcastChange(): void {
+  const todos = store.list()
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send('todos:changed', todos)
+  }
+}
+
+function buildTray(): void {
+  const iconPath = join(__dirname, '../../resources/tray.png')
+  let image = nativeImage.createFromPath(iconPath)
+  if (image.isEmpty()) {
+    // Fall back to a blank 16x16 so the tray still mounts in dev.
+    image = nativeImage.createEmpty()
+  }
+  tray = new Tray(image)
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'Open Jot',
+      click: () => {
+        showMainWindow()
+      }
+    },
+    {
+      label: 'Quick capture',
+      accelerator: CAPTURE_SHORTCUT,
+      click: () => {
+        toggleCaptureWindow()
+      }
+    },
+    { type: 'separator' },
+    {
+      label: 'Quit',
+      click: () => {
+        const target = mainWindow as (BrowserWindow & { forceClose?: boolean }) | null
+        if (target !== null) {
+          target.forceClose = true
+        }
+        app.quit()
+      }
+    }
+  ])
+  tray.setToolTip('Jot — quick capture todos')
+  tray.setContextMenu(menu)
+  tray.on('click', () => {
+    showMainWindow()
+  })
+}
+
+function registerIpc(): void {
+  ipcMain.handle('todos:list', () => {
+    return store.list()
+  })
+  ipcMain.handle('todos:add', (_event, text: string) => {
+    return store.add(text)
+  })
+  ipcMain.handle('todos:toggle', (_event, id: string) => {
+    return store.toggle(id)
+  })
+  ipcMain.handle('todos:remove', (_event, id: string) => {
+    return store.remove(id)
+  })
+  ipcMain.handle('todos:clearCompleted', () => {
+    return store.clearCompleted()
+  })
+
+  ipcMain.handle('capture:submit', async (_event, text: string) => {
+    await store.add(text)
+    if (captureWindow !== null) {
+      captureWindow.hide()
+    }
+  })
+  ipcMain.on('capture:close', () => {
+    if (captureWindow !== null) {
+      captureWindow.hide()
+    }
+  })
+}
+
+app.whenReady().then(async () => {
+  electronApp.setAppUserModelId('io.thegang.jot')
+
+  await store.init()
+  store.subscribe(() => {
+    broadcastChange()
+  })
+
+  app.on('browser-window-created', (_event, window) => {
+    optimizer.watchWindowShortcuts(window)
+  })
+
+  registerIpc()
+
+  mainWindow = createMainWindow()
+  captureWindow = createCaptureWindow()
+  buildTray()
+
+  const registered = globalShortcut.register(CAPTURE_SHORTCUT, () => {
+    toggleCaptureWindow()
+  })
+  if (!registered) {
+    console.error(`Failed to register global shortcut: ${CAPTURE_SHORTCUT}`)
+  }
+
+  app.on('activate', () => {
+    showMainWindow()
+  })
+})
+
+app.on('second-instance', () => {
+  showMainWindow()
+})
+
+// The app is a tray resident — do not quit when all windows are hidden.
+app.on('window-all-closed', () => {
+  // Intentionally left blank on all platforms; the tray keeps it alive.
+})
+
+app.on('will-quit', () => {
+  globalShortcut.unregisterAll()
+})

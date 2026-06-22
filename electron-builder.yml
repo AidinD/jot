@@ -1,0 +1,15 @@
+appId: io.thegang.jot
+productName: Jot
+directories:
+  buildResources: resources
+files:
+  - out/**
+  - resources/**
+win:
+  target:
+    - nsis
+  icon: resources/icon.png
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
