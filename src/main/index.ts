@@ -3,6 +3,7 @@ import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray } 
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { LocalJsonStorage } from './storage'
 import { TodoStore } from './store'
+import { loadPrefs, savePrefs } from './prefs'
 import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
 
 const CAPTURE_SHORTCUT = 'Control+Alt+.'
@@ -10,6 +11,7 @@ const CAPTURE_SHORTCUT = 'Control+Alt+.'
 let mainWindow: BrowserWindow | null = null
 let captureWindow: BrowserWindow | null = null
 let tray: Tray | null = null
+let autoLaunch = true
 
 const store = new TodoStore(new LocalJsonStorage())
 
@@ -49,6 +51,32 @@ function broadcastChange(): void {
   }
 }
 
+function applyAutoLaunch(): void {
+  // setLoginItemSettings only makes sense for the installed app; in dev it
+  // would point at electron.exe, so we just persist the preference.
+  if (app.isPackaged) {
+    app.setLoginItemSettings({ openAtLogin: autoLaunch })
+  }
+}
+
+function initAutoLaunch(): void {
+  const prefs = loadPrefs()
+  if (prefs.autoLaunch === undefined) {
+    autoLaunch = true
+    savePrefs({ ...prefs, autoLaunch })
+  } else {
+    autoLaunch = prefs.autoLaunch
+  }
+  applyAutoLaunch()
+}
+
+function setAutoLaunch(value: boolean): void {
+  autoLaunch = value
+  savePrefs({ ...loadPrefs(), autoLaunch })
+  applyAutoLaunch()
+  buildTray()
+}
+
 function buildTray(): void {
   const iconPath = join(__dirname, '../../resources/tray.png')
   let image = nativeImage.createFromPath(iconPath)
@@ -56,7 +84,13 @@ function buildTray(): void {
     // Fall back to a blank 16x16 so the tray still mounts in dev.
     image = nativeImage.createEmpty()
   }
-  tray = new Tray(image)
+  if (tray === null) {
+    tray = new Tray(image)
+    tray.setToolTip('Jot — quick capture todos')
+    tray.on('click', () => {
+      showMainWindow()
+    })
+  }
   const menu = Menu.buildFromTemplate([
     {
       label: 'Open Jot',
@@ -73,6 +107,15 @@ function buildTray(): void {
     },
     { type: 'separator' },
     {
+      label: 'Start at login',
+      type: 'checkbox',
+      checked: autoLaunch,
+      click: (item) => {
+        setAutoLaunch(item.checked)
+      }
+    },
+    { type: 'separator' },
+    {
       label: 'Quit',
       click: () => {
         const target = mainWindow as (BrowserWindow & { forceClose?: boolean }) | null
@@ -83,11 +126,7 @@ function buildTray(): void {
       }
     }
   ])
-  tray.setToolTip('Jot — quick capture todos')
   tray.setContextMenu(menu)
-  tray.on('click', () => {
-    showMainWindow()
-  })
 }
 
 function registerIpc(): void {
@@ -152,6 +191,7 @@ app.whenReady().then(async () => {
 
   mainWindow = createMainWindow()
   captureWindow = createCaptureWindow()
+  initAutoLaunch()
   buildTray()
 
   const registered = globalShortcut.register(CAPTURE_SHORTCUT, () => {
