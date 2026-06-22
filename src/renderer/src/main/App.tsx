@@ -185,7 +185,9 @@ export function App(): JSX.Element {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Jot</h1>
+        <h1>
+          Jot <span className="version">v{__APP_VERSION__}</span>
+        </h1>
         <span className="hint">Ctrl+Alt+. anywhere</span>
       </header>
 
