@@ -2,9 +2,19 @@ import { join } from 'path'
 import { BrowserWindow, screen } from 'electron'
 import { is } from '@electron-toolkit/utils'
 
-const preloadPath = join(__dirname, '../preload/index.js')
+const preloadPath = join(__dirname, '../preload/index.mjs')
 
 function loadRoute(window: BrowserWindow, htmlFile: string): void {
+  if (is.dev) {
+    // Forward renderer console + load failures to the main process stdout so
+    // dev issues (CSP violations, mount errors) are visible in the terminal.
+    window.webContents.on('console-message', (_event, level, message) => {
+      console.log(`[renderer:${htmlFile}] (${level}) ${message}`)
+    })
+    window.webContents.on('did-fail-load', (_event, code, description) => {
+      console.error(`[renderer:${htmlFile}] failed to load: ${code} ${description}`)
+    })
+  }
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     window.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/${htmlFile}`)
     return
