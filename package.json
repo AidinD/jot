@@ -4,6 +4,7 @@
   "description": "A keyboard-first quick-capture todo app",
   "main": "./out/main/index.js",
   "author": "Aidin",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {
