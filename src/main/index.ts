@@ -176,7 +176,7 @@ function registerIpc(): void {
 }
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('io.thegang.jot')
+  electronApp.setAppUserModelId('io.github.aidind.jot')
 
   await store.init()
   store.subscribe(() => {

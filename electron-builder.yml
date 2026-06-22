@@ -1,4 +1,4 @@
-appId: io.thegang.jot
+appId: io.github.aidind.jot
 productName: Jot
 directories:
   buildResources: resources
