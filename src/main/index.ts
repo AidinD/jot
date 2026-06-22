@@ -43,9 +43,9 @@ function toggleCaptureWindow(): void {
 }
 
 function broadcastChange(): void {
-  const todos = store.list()
+  const state = store.getState()
   for (const window of BrowserWindow.getAllWindows()) {
-    window.webContents.send('todos:changed', todos)
+    window.webContents.send('state:changed', state)
   }
 }
 
@@ -91,24 +91,40 @@ function buildTray(): void {
 }
 
 function registerIpc(): void {
-  ipcMain.handle('todos:list', () => {
-    return store.list()
+  ipcMain.handle('state:get', () => {
+    return store.getState()
   })
-  ipcMain.handle('todos:add', (_event, text: string) => {
-    return store.add(text)
+  ipcMain.handle('todos:add', (_event, text: string, categoryId: string | null) => {
+    return store.addTodo(text, categoryId)
   })
   ipcMain.handle('todos:toggle', (_event, id: string) => {
-    return store.toggle(id)
+    return store.toggleTodo(id)
   })
   ipcMain.handle('todos:remove', (_event, id: string) => {
-    return store.remove(id)
+    return store.removeTodo(id)
+  })
+  ipcMain.handle('todos:setCategory', (_event, id: string, categoryId: string | null) => {
+    return store.setTodoCategory(id, categoryId)
+  })
+  ipcMain.handle('todos:reorder', (_event, orderedVisibleIds: string[]) => {
+    return store.reorderTodos(orderedVisibleIds)
   })
   ipcMain.handle('todos:clearCompleted', () => {
     return store.clearCompleted()
   })
 
+  ipcMain.handle('categories:add', (_event, name: string) => {
+    return store.addCategory(name)
+  })
+  ipcMain.handle('categories:rename', (_event, id: string, name: string) => {
+    return store.renameCategory(id, name)
+  })
+  ipcMain.handle('categories:remove', (_event, id: string) => {
+    return store.removeCategory(id)
+  })
+
   ipcMain.handle('capture:submit', async (_event, text: string) => {
-    await store.add(text)
+    await store.addTodo(text, null)
     if (captureWindow !== null) {
       captureWindow.hide()
     }

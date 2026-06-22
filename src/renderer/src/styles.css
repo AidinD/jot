@@ -22,7 +22,7 @@ body {
   user-select: none;
 }
 
-/* ---------- Main window ---------- */
+/* ---------- Layout ---------- */
 
 .app {
   display: flex;
@@ -47,6 +47,175 @@ body {
 .hint {
   font-size: 12px;
   color: var(--text-dim);
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  gap: 14px;
+  min-height: 0;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar {
+  width: 210px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.sidebar-heading {
+  margin: 12px 4px 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+}
+
+.side-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-row:hover {
+  background: var(--surface);
+}
+
+.side-row.active {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.side-row.drop-over {
+  border-color: var(--accent);
+  background: rgba(111, 156, 255, 0.16);
+}
+
+.side-label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.side-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  min-width: 18px;
+  text-align: right;
+}
+
+/* Category rows are a flex container of [main button][count][actions]. */
+.side-row.category {
+  cursor: default;
+}
+
+.side-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.side-action {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 2px;
+  opacity: 0;
+}
+
+.side-row.category:hover .side-action {
+  opacity: 1;
+}
+
+.side-action:hover {
+  color: var(--text);
+}
+
+.cat-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cat-edit-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.newcat-zone {
+  margin-top: 8px;
+  padding: 12px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.newcat-zone.over {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(111, 156, 255, 0.12);
+}
+
+.add-category-input {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+
+.add-category-input:focus {
+  border-color: var(--accent);
+}
+
+/* ---------- Main pane ---------- */
+
+.main-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  overflow-y: auto;
 }
 
 .add-row {
@@ -86,14 +255,13 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  overflow-y: auto;
 }
 
 .todo-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 10px 12px;
+  gap: 8px;
+  padding: 8px 10px;
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid transparent;
@@ -103,16 +271,42 @@ body {
   background: var(--surface-hover);
 }
 
+.todo-row.overlay {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  cursor: grabbing;
+}
+
+.drag-handle {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+  touch-action: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .todo-label {
   display: flex;
   align-items: center;
   gap: 10px;
   flex: 1;
+  min-width: 0;
   cursor: pointer;
 }
 
 .todo-text {
   font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .todo-row.done .todo-text {
@@ -138,6 +332,7 @@ body {
   color: var(--text-dim);
   font-size: 13px;
   padding: 8px 2px;
+  list-style: none;
 }
 
 .done-section {

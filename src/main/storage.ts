@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs'
 import { dirname, join } from 'path'
 import { app } from 'electron'
-import type { Todo } from '../renderer/src/shared/types'
+import type { JotState, Todo } from '../renderer/src/shared/types'
 
 /**
  * Storage seam. v1 ships a local JSON implementation, but the rest of the
@@ -10,8 +10,40 @@ import type { Todo } from '../renderer/src/shared/types'
  * process logic or the renderer.
  */
 export interface StorageAdapter {
-  load: () => Promise<Todo[]>
-  save: (todos: Todo[]) => Promise<void>
+  load: () => Promise<JotState>
+  save: (state: JotState) => Promise<void>
+}
+
+function normalizeTodo(raw: Partial<Todo>): Todo {
+  return {
+    id: String(raw.id),
+    text: String(raw.text ?? ''),
+    done: Boolean(raw.done),
+    categoryId: raw.categoryId ?? null,
+    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+    completedAt: typeof raw.completedAt === 'number' ? raw.completedAt : null
+  }
+}
+
+/**
+ * Accepts both the legacy v0.1 format (a bare `Todo[]`) and the current
+ * `JotState` object, so existing todos.json files keep working.
+ */
+function migrate(parsed: unknown): JotState {
+  if (Array.isArray(parsed)) {
+    return {
+      todos: parsed.map(normalizeTodo),
+      categories: []
+    }
+  }
+  if (parsed !== null && typeof parsed === 'object') {
+    const state = parsed as Partial<JotState>
+    return {
+      todos: Array.isArray(state.todos) ? state.todos.map(normalizeTodo) : [],
+      categories: Array.isArray(state.categories) ? state.categories : []
+    }
+  }
+  return { todos: [], categories: [] }
 }
 
 export class LocalJsonStorage implements StorageAdapter {
@@ -21,27 +53,23 @@ export class LocalJsonStorage implements StorageAdapter {
     this.filePath = filePath ?? join(app.getPath('userData'), 'todos.json')
   }
 
-  async load(): Promise<Todo[]> {
+  async load(): Promise<JotState> {
     try {
       const raw = await fs.readFile(this.filePath, 'utf-8')
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) {
-        return parsed as Todo[]
-      }
-      return []
+      return migrate(JSON.parse(raw))
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
       if (code === 'ENOENT') {
-        return []
+        return { todos: [], categories: [] }
       }
       throw error
     }
   }
 
-  async save(todos: Todo[]): Promise<void> {
+  async save(state: JotState): Promise<void> {
     await fs.mkdir(dirname(this.filePath), { recursive: true })
     const tempPath = `${this.filePath}.tmp`
-    await fs.writeFile(tempPath, JSON.stringify(todos, null, 2), 'utf-8')
+    await fs.writeFile(tempPath, JSON.stringify(state, null, 2), 'utf-8')
     await fs.rename(tempPath, this.filePath)
   }
 }

@@ -38,3 +38,33 @@ transcript for the step-by-step; this file is only the choices worth revisiting.
 - Why: hiding the popover lets Windows restore focus to the previously active
   app, so the user lands back where they were after pressing Enter/Esc. Good
   enough for v1; revisit if focus restoration proves flaky.
+
+## 2026-06-22 — Categories + drag-and-drop
+
+**Storage format went from `Todo[]` to `JotState { todos, categories }`.**
+- `Todo` gained `categoryId: string | null`. `storage.ts` migrates the legacy
+  bare-array file in place on load, so existing data survives the upgrade.
+
+**State sync simplified to one source of truth.**
+- Mutation IPC calls now return `void`; the canonical `JotState` always arrives
+  via the `onChanged` broadcast. Only `getState` (initial load) and
+  `addCategory` (returns the new id so the UI can enter rename mode) differ.
+- Why: avoids two code paths (return value vs broadcast) drifting out of sync.
+
+**Drag-and-drop uses `@dnd-kit` — reversing the earlier "native DnD" plan.**
+- Alternatives: native HTML5 drag events (what I first proposed), react-dnd.
+- Why: the scope grew to include in-list reordering, not just cross-list moves.
+  Native HTML5 DnD makes sortable lists janky (dragover flicker, no animation,
+  poor a11y). `@dnd-kit` gives smooth sortable + external droppables (the
+  sidebar lists and the "new list" drop zone) in one model. One dependency,
+  but it carries the core interaction of the app.
+
+**Reorder preserves non-visible todos' positions.**
+- The renderer sends only the visible *open* todo ids in their new order;
+  `store.reorderTodos` refills exactly those array slots and leaves done items
+  and other-category items untouched. So reordering inside a filtered list
+  doesn't disturb the global ordering of everything else.
+
+**Drag handle (⠿) instead of whole-row drag.**
+- Why: a dedicated handle keeps checkbox/delete clicks unambiguous and avoids
+  fighting the pointer-activation distance heuristic.
