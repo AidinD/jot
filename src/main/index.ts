@@ -139,11 +139,11 @@ app.whenReady().then(async () => {
   buildTray()
 
   const registered = globalShortcut.register(CAPTURE_SHORTCUT, () => {
+    console.log(`[shortcut] ${CAPTURE_SHORTCUT} fired`)
     toggleCaptureWindow()
   })
-  if (!registered) {
-    console.error(`Failed to register global shortcut: ${CAPTURE_SHORTCUT}`)
-  }
+  console.log(`[shortcut] register ${CAPTURE_SHORTCUT}: ${registered}`)
+  console.log(`[shortcut] isRegistered: ${globalShortcut.isRegistered(CAPTURE_SHORTCUT)}`)
 
   app.on('activate', () => {
     showMainWindow()
