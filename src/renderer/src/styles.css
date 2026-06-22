@@ -1,0 +1,208 @@
+:root {
+  --bg: #1b1c1f;
+  --surface: #26282c;
+  --surface-hover: #2f3237;
+  --border: #36393f;
+  --text: #e8e9ec;
+  --text-dim: #9a9da3;
+  --accent: #6f9cff;
+  --danger: #ff6b6b;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ---------- Main window ---------- */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 16px;
+  gap: 12px;
+}
+
+.app-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: 0.5px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.add-row {
+  display: flex;
+  gap: 8px;
+}
+
+.add-input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.add-input:focus {
+  border-color: var(--accent);
+}
+
+.add-button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: #0c1322;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+}
+
+.todo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid transparent;
+}
+
+.todo-row:hover {
+  background: var(--surface-hover);
+}
+
+.todo-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.todo-text {
+  font-size: 14px;
+}
+
+.todo-row.done .todo-text {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
+.remove-button {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.remove-button:hover {
+  color: var(--danger);
+}
+
+.empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 8px 2px;
+}
+
+.done-section {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.done-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.link-button {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* ---------- Capture popover ---------- */
+
+.capture-body {
+  background: transparent;
+}
+
+.capture {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  margin: 6px;
+  border-radius: 14px;
+  background: rgba(30, 31, 35, 0.96);
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  -webkit-app-region: drag;
+}
+
+.capture-input {
+  -webkit-app-region: no-drag;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 17px;
+  outline: none;
+}
+
+.capture-input:focus {
+  border-color: var(--accent);
+}
+
+.capture-hint {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-dim);
+}
