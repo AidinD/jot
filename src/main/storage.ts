@@ -93,24 +93,30 @@ export class LocalJsonStorage implements StorageAdapter {
       console.error('Failed to prepare watch directory', error)
     })
 
-    const watcher = watchFs(directoryPath, (_eventType, filename) => {
-      if (closed) {
-        return
-      }
-      if (filename !== undefined && filename !== null) {
-        const observedName = String(filename)
-        if (observedName !== targetFile) {
+    let watcher
+    try {
+      watcher = watchFs(directoryPath, (_eventType, filename) => {
+        if (closed) {
           return
         }
-      }
-      if (debounceTimer !== null) {
-        clearTimeout(debounceTimer)
-      }
-      debounceTimer = setTimeout(() => {
-        debounceTimer = null
-        onChange()
-      }, 150)
-    })
+        if (filename !== undefined && filename !== null) {
+          const observedName = String(filename)
+          if (observedName !== targetFile) {
+            return
+          }
+        }
+        if (debounceTimer !== null) {
+          clearTimeout(debounceTimer)
+        }
+        debounceTimer = setTimeout(() => {
+          debounceTimer = null
+          onChange()
+        }, 150)
+      })
+    } catch (error) {
+      console.error('Failed to watch Jot storage file', error)
+      return () => {}
+    }
 
     return () => {
       closed = true
