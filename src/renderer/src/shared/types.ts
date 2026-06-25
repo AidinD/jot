@@ -48,6 +48,7 @@ export interface JotApi {
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   removeCategory: (id: string) => Promise<void>
+  reorderCategories: (orderedIds: string[]) => Promise<void>
   addImage: (todoId: string) => Promise<void>
   removeImage: (todoId: string, imagePath: string) => Promise<void>
   getImagePath: (relativePath: string) => Promise<string>

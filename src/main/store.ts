@@ -220,15 +220,31 @@ export class TodoStore {
    * uncategorized so nothing is lost.
    */
   async removeCategory(id: string): Promise<void> {
-    this.state.categories = this.state.categories.filter((category) => {
-      return category.id !== id
-    })
+    this.state.categories = this.state.categories.filter((cat) => cat.id !== id)
     this.state.todos = this.state.todos.map((todo) => {
       if (todo.categoryId !== id) {
         return todo
       }
       return { ...todo, categoryId: null }
     })
+    await this.persist()
+  }
+
+  async reorderCategories(orderedIds: string[]): Promise<void> {
+    const existing = new Map(this.state.categories.map((c) => [c.id, c]))
+    const newOrder: Category[] = []
+    for (const id of orderedIds) {
+      const cat = existing.get(id)
+      if (cat !== undefined) {
+        newOrder.push(cat)
+        existing.delete(id)
+      }
+    }
+    // Append any that weren't in the ordered list just in case
+    for (const cat of existing.values()) {
+      newOrder.push(cat)
+    }
+    this.state.categories = newOrder
     await this.persist()
   }
 

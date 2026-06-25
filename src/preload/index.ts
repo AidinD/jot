@@ -44,6 +44,9 @@ const jotApi = {
   removeCategory: (id: string): Promise<void> => {
     return ipcRenderer.invoke('categories:remove', id)
   },
+  reorderCategories: (orderedIds: string[]): Promise<void> => {
+    return ipcRenderer.invoke('categories:reorder', orderedIds)
+  },
   onChanged: (callback: (state: JotState) => void): (() => void) => {
     const handler = (_event: unknown, state: JotState): void => {
       callback(state)
