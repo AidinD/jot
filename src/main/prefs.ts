@@ -15,7 +15,7 @@ export function loadPrefs(): Prefs {
     if (!existsSync(prefsPath())) {
       return {}
     }
-    const parsed = JSON.parse(readFileSync(prefsPath(), 'utf-8'))
+    const parsed = JSON.parse(readFileSync(prefsPath(), 'utf-8').replace(/^\uFEFF/, ''))
     if (parsed !== null && typeof parsed === 'object') {
       return parsed as Prefs
     }

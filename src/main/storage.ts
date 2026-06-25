@@ -66,7 +66,7 @@ export class LocalJsonStorage implements StorageAdapter {
   async load(): Promise<JotState> {
     try {
       const raw = await fs.readFile(this.filePath, 'utf-8')
-      return migrate(JSON.parse(raw))
+      return migrate(JSON.parse(raw.replace(/^\uFEFF/, '')))
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
       if (code === 'ENOENT') {
