@@ -1,7 +1,7 @@
 import { promises as fs } from 'fs'
 import { dirname, join } from 'path'
 import { app } from 'electron'
-import type { JotState, Todo } from '../renderer/src/shared/types'
+import type { JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
 
 /**
  * Storage seam. v1 ships a local JSON implementation, but the rest of the
@@ -14,11 +14,20 @@ export interface StorageAdapter {
   save: (state: JotState) => Promise<void>
 }
 
-function normalizeTodo(raw: Partial<Todo>): Todo {
+function normalizeTodo(raw: Partial<Todo> & Record<string, unknown>): Todo {
+  let status: TodoStatus = 'open'
+  if (raw.status === 'open' || raw.status === 'in-progress' || raw.status === 'done') {
+    status = raw.status
+  } else if (raw.done === true) {
+    status = 'done'
+  }
+
   return {
     id: String(raw.id),
     text: String(raw.text ?? ''),
-    done: Boolean(raw.done),
+    status,
+    description: String(raw.description ?? ''),
+    images: Array.isArray(raw.images) ? raw.images : [],
     categoryId: raw.categoryId ?? null,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
     completedAt: typeof raw.completedAt === 'number' ? raw.completedAt : null

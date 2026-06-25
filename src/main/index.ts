@@ -1,10 +1,11 @@
 import { join } from 'path'
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray } from 'electron'
+import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray, dialog } from 'electron'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { LocalJsonStorage } from './storage'
 import { TodoStore } from './store'
 import { loadPrefs, savePrefs } from './prefs'
 import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
+import type { TodoStatus } from '../renderer/src/shared/types'
 
 const CAPTURE_SHORTCUT = 'Control+Alt+.'
 
@@ -136,8 +137,26 @@ function registerIpc(): void {
   ipcMain.handle('todos:add', (_event, text: string, categoryId: string | null) => {
     return store.addTodo(text, categoryId)
   })
-  ipcMain.handle('todos:toggle', (_event, id: string) => {
-    return store.toggleTodo(id)
+  ipcMain.handle('todos:setStatus', (_event, id: string, status: TodoStatus) => {
+    return store.setStatus(id, status)
+  })
+  ipcMain.handle('todos:update', (_event, id: string, patch: { text?: string; description?: string }) => {
+    return store.updateTodo(id, patch)
+  })
+  ipcMain.handle('todos:addImage', async (_event, todoId: string) => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] }]
+    })
+    if (!result.canceled && result.filePaths.length > 0) {
+      return store.addImage(todoId, result.filePaths[0])
+    }
+  })
+  ipcMain.handle('todos:removeImage', (_event, todoId: string, imagePath: string) => {
+    return store.removeImage(todoId, imagePath)
+  })
+  ipcMain.handle('images:resolve', (_event, relativePath: string) => {
+    return join(app.getPath('userData'), relativePath)
   })
   ipcMain.handle('todos:remove', (_event, id: string) => {
     return store.removeTodo(id)

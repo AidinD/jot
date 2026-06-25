@@ -1,5 +1,8 @@
 import { randomUUID } from 'crypto'
-import type { Category, JotState, Todo } from '../renderer/src/shared/types'
+import { app } from 'electron'
+import { promises as fs } from 'fs'
+import { dirname, join, extname } from 'path'
+import type { Category, JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
 import type { StorageAdapter } from './storage'
 
 type ChangeListener = (state: JotState) => void
@@ -43,7 +46,9 @@ export class TodoStore {
     const todo: Todo = {
       id: randomUUID(),
       text: trimmed,
-      done: false,
+      status: 'open' as const,
+      description: '',
+      images: [],
       categoryId,
       createdAt: Date.now(),
       completedAt: null
@@ -53,19 +58,81 @@ export class TodoStore {
     await this.persist()
   }
 
-  async toggleTodo(id: string): Promise<void> {
+  async setStatus(id: string, status: TodoStatus): Promise<void> {
     this.state.todos = this.state.todos.map((todo) => {
       if (todo.id !== id) {
         return todo
       }
-      const done = !todo.done
       return {
         ...todo,
-        done,
-        completedAt: done ? Date.now() : null
+        status,
+        completedAt: status === 'done' ? Date.now() : null
       }
     })
     await this.persist()
+  }
+
+  async updateTodo(id: string, patch: { text?: string; description?: string }): Promise<void> {
+    this.state.todos = this.state.todos.map((todo) => {
+      if (todo.id !== id) {
+        return todo
+      }
+      const text = patch.text !== undefined ? patch.text.trim() : todo.text
+      if (text.length === 0) {
+        return todo
+      }
+      return {
+        ...todo,
+        text,
+        description: patch.description !== undefined ? patch.description : todo.description
+      }
+    })
+    await this.persist()
+  }
+
+  async addImage(todoId: string, sourcePath: string): Promise<string> {
+    const ext = extname(sourcePath)
+    const fileName = `${randomUUID()}${ext}`
+    const relativePath = join('jot-images', todoId, fileName)
+    const absolutePath = join(app.getPath('userData'), relativePath)
+
+    await fs.mkdir(dirname(absolutePath), { recursive: true })
+    await fs.copyFile(sourcePath, absolutePath)
+
+    this.state.todos = this.state.todos.map((todo) => {
+      if (todo.id !== todoId) {
+        return todo
+      }
+      return {
+        ...todo,
+        images: [...todo.images, relativePath]
+      }
+    })
+    await this.persist()
+    return relativePath
+  }
+
+  async removeImage(todoId: string, imagePath: string): Promise<void> {
+    this.state.todos = this.state.todos.map((todo) => {
+      if (todo.id !== todoId) {
+        return todo
+      }
+      return {
+        ...todo,
+        images: todo.images.filter((p) => p !== imagePath)
+      }
+    })
+    await this.persist()
+
+    const absolutePath = join(app.getPath('userData'), imagePath)
+    try {
+      await fs.unlink(absolutePath)
+    } catch (e) {
+      const err = e as NodeJS.ErrnoException
+      if (err.code !== 'ENOENT') {
+        console.error('Failed to remove image', err)
+      }
+    }
   }
 
   async removeTodo(id: string): Promise<void> {
@@ -117,7 +184,7 @@ export class TodoStore {
 
   async clearCompleted(): Promise<void> {
     this.state.todos = this.state.todos.filter((todo) => {
-      return !todo.done
+      return todo.status !== 'done'
     })
     await this.persist()
   }

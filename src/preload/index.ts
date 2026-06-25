@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { JotState } from '../renderer/src/shared/types'
+import type { JotState, TodoStatus } from '../renderer/src/shared/types'
 
 const jotApi = {
   getState: (): Promise<JotState> => {
@@ -8,8 +8,20 @@ const jotApi = {
   addTodo: (text: string, categoryId: string | null): Promise<void> => {
     return ipcRenderer.invoke('todos:add', text, categoryId)
   },
-  toggleTodo: (id: string): Promise<void> => {
-    return ipcRenderer.invoke('todos:toggle', id)
+  setStatus: (id: string, status: TodoStatus): Promise<void> => {
+    return ipcRenderer.invoke('todos:setStatus', id, status)
+  },
+  updateTodo: (id: string, patch: { text?: string; description?: string }): Promise<void> => {
+    return ipcRenderer.invoke('todos:update', id, patch)
+  },
+  addImage: (todoId: string): Promise<void> => {
+    return ipcRenderer.invoke('todos:addImage', todoId)
+  },
+  removeImage: (todoId: string, imagePath: string): Promise<void> => {
+    return ipcRenderer.invoke('todos:removeImage', todoId, imagePath)
+  },
+  getImagePath: (relativePath: string): Promise<string> => {
+    return ipcRenderer.invoke('images:resolve', relativePath)
   },
   removeTodo: (id: string): Promise<void> => {
     return ipcRenderer.invoke('todos:remove', id)
