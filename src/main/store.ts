@@ -27,11 +27,18 @@ const CATEGORY_COLORS = [
 export class TodoStore {
   private state: JotState = { todos: [], categories: [] }
   private readonly listeners = new Set<ChangeListener>()
+  private stopWatching: (() => void) | null = null
+  private reloadInFlight: Promise<void> | null = null
 
   constructor(private readonly storage: StorageAdapter) {}
 
   async init(): Promise<void> {
     this.state = await this.storage.load()
+    if (this.storage.watch !== undefined) {
+      this.stopWatching = this.storage.watch(() => {
+        void this.reloadFromDisk()
+      })
+    }
   }
 
   getState(): JotState {
@@ -255,10 +262,44 @@ export class TodoStore {
     }
   }
 
+  dispose(): void {
+    if (this.stopWatching !== null) {
+      this.stopWatching()
+      this.stopWatching = null
+    }
+  }
+
   private async persist(): Promise<void> {
     await this.storage.save(this.state)
+    this.notify()
+  }
+
+  private notify(): void {
     for (const listener of this.listeners) {
       listener(this.state)
     }
+  }
+
+  private async reloadFromDisk(): Promise<void> {
+    if (this.reloadInFlight !== null) {
+      return this.reloadInFlight
+    }
+
+    this.reloadInFlight = (async () => {
+      try {
+        const loaded = await this.storage.load()
+        if (JSON.stringify(loaded) === JSON.stringify(this.state)) {
+          return
+        }
+        this.state = loaded
+        this.notify()
+      } catch (error) {
+        console.error('Failed to reload Jot state from disk', error)
+      } finally {
+        this.reloadInFlight = null
+      }
+    })()
+
+    return this.reloadInFlight
   }
 }

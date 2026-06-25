@@ -68,3 +68,11 @@ transcript for the step-by-step; this file is only the choices worth revisiting.
 **Drag handle (⠿) instead of whole-row drag.**
 - Why: a dedicated handle keeps checkbox/delete clicks unambiguous and avoids
   fighting the pointer-activation distance heuristic.
+
+## 2026-06-25 — External integration via watched JSON
+
+**External agents integrate directly with `todos.json`; no MCP server.**
+- Alternatives: build a standalone MCP server, keep integration manual only.
+- Why: Jot already has a single JSON source of truth. A live file watch plus
+  an `INTEGRATION.md` contract gives Claude/Antigravity direct read/write
+  access with far less complexity than a separate protocol layer.

@@ -1,5 +1,5 @@
-import { promises as fs } from 'fs'
-import { dirname, join } from 'path'
+import { promises as fs, watch as watchFs } from 'fs'
+import { basename, dirname, join } from 'path'
 import { app } from 'electron'
 import type { JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
 
@@ -12,6 +12,7 @@ import type { JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
 export interface StorageAdapter {
   load: () => Promise<JotState>
   save: (state: JotState) => Promise<void>
+  watch?: (onChange: () => void) => () => void
 }
 
 function normalizeTodo(raw: any): Todo {
@@ -80,5 +81,44 @@ export class LocalJsonStorage implements StorageAdapter {
     const tempPath = `${this.filePath}.tmp`
     await fs.writeFile(tempPath, JSON.stringify(state, null, 2), 'utf-8')
     await fs.rename(tempPath, this.filePath)
+  }
+
+  watch(onChange: () => void): () => void {
+    const directoryPath = dirname(this.filePath)
+    const targetFile = basename(this.filePath)
+    let closed = false
+    let debounceTimer: NodeJS.Timeout | null = null
+
+    void fs.mkdir(directoryPath, { recursive: true }).catch((error) => {
+      console.error('Failed to prepare watch directory', error)
+    })
+
+    const watcher = watchFs(directoryPath, (_eventType, filename) => {
+      if (closed) {
+        return
+      }
+      if (filename !== undefined && filename !== null) {
+        const observedName = String(filename)
+        if (observedName !== targetFile) {
+          return
+        }
+      }
+      if (debounceTimer !== null) {
+        clearTimeout(debounceTimer)
+      }
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null
+        onChange()
+      }, 150)
+    })
+
+    return () => {
+      closed = true
+      if (debounceTimer !== null) {
+        clearTimeout(debounceTimer)
+        debounceTimer = null
+      }
+      watcher.close()
+    }
   }
 }

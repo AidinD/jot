@@ -11,6 +11,7 @@ top of your list. The popover dismisses and focus returns to where you were.
 - Add / complete / delete todos, newest on top
 - Completed items collapse into a "Completed" section with one-click clear
 - Local-first storage (`todos.json` in the app's userData folder)
+- External agent integration via watched JSON file; see `INTEGRATION.md`
 - Storage seam ready for a future cloud-sync adapter (Cloudflare Workers + D1)
 
 ## Develop

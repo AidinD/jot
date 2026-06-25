@@ -244,5 +244,6 @@ app.on('window-all-closed', () => {
 })
 
 app.on('will-quit', () => {
+  store.dispose()
   globalShortcut.unregisterAll()
 })
