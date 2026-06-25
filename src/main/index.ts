@@ -1,3 +1,4 @@
+import { appendFileSync } from 'fs'
 import { join } from 'path'
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray, dialog } from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
@@ -15,6 +16,25 @@ let tray: Tray | null = null
 let autoLaunch = true
 
 const store = new TodoStore(new LocalJsonStorage())
+
+function logStartup(message: string): void {
+  try {
+    const startupLogPath = join(app.getPath('userData'), 'startup.log')
+    appendFileSync(startupLogPath, `${new Date().toISOString()} ${message}\n`, 'utf-8')
+  } catch {
+    // Logging must never block startup.
+  }
+}
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught exception', error)
+  logStartup(`uncaughtException: ${String(error)}`)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection', reason)
+  logStartup(`unhandledRejection: ${String(reason)}`)
+})
 
 // Only one instance may own the global shortcut and the tray.
 const gotLock = app.requestSingleInstanceLock()
@@ -198,40 +218,53 @@ function registerIpc(): void {
 }
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('io.github.aidind.jot')
+  try {
+    logStartup('app ready')
+    electronApp.setAppUserModelId('io.github.aidind.jot')
 
-  await store.init()
-  store.subscribe(() => {
-    broadcastChange()
-  })
+    logStartup('loading store')
+    await store.init()
+    logStartup('store loaded')
+    store.subscribe(() => {
+      broadcastChange()
+    })
 
-  app.on('browser-window-created', (_event, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+    app.on('browser-window-created', (_event, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
 
-  registerIpc()
+    registerIpc()
+    logStartup('ipc registered')
 
-  mainWindow = createMainWindow()
-  captureWindow = createCaptureWindow()
-  
-  if (is.dev) {
-    mainWindow.show()
-    mainWindow.webContents.openDevTools()
+    mainWindow = createMainWindow()
+    captureWindow = createCaptureWindow()
+    logStartup('windows created')
+
+    if (is.dev) {
+      mainWindow.show()
+      mainWindow.webContents.openDevTools()
+    }
+
+    initAutoLaunch()
+    buildTray()
+    logStartup('tray built')
+
+    const registered = globalShortcut.register(CAPTURE_SHORTCUT, () => {
+      console.log(`[shortcut] ${CAPTURE_SHORTCUT} fired`)
+      logStartup(`shortcut fired ${CAPTURE_SHORTCUT}`)
+      toggleCaptureWindow()
+    })
+    console.log(`[shortcut] register ${CAPTURE_SHORTCUT}: ${registered}`)
+    console.log(`[shortcut] isRegistered: ${globalShortcut.isRegistered(CAPTURE_SHORTCUT)}`)
+    logStartup(`shortcut register ${registered}`)
+
+    app.on('activate', () => {
+      showMainWindow()
+    })
+  } catch (error) {
+    console.error('Jot failed to start', error)
+    logStartup(`startup error: ${String(error)}`)
   }
-
-  initAutoLaunch()
-  buildTray()
-
-  const registered = globalShortcut.register(CAPTURE_SHORTCUT, () => {
-    console.log(`[shortcut] ${CAPTURE_SHORTCUT} fired`)
-    toggleCaptureWindow()
-  })
-  console.log(`[shortcut] register ${CAPTURE_SHORTCUT}: ${registered}`)
-  console.log(`[shortcut] isRegistered: ${globalShortcut.isRegistered(CAPTURE_SHORTCUT)}`)
-
-  app.on('activate', () => {
-    showMainWindow()
-  })
 })
 
 app.on('second-instance', () => {
