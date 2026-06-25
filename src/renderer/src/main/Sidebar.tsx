@@ -156,8 +156,12 @@ function CategoryRow({
   useEffect(() => {
     if (editing) {
       setDraft(category.name)
-      inputRef.current?.focus()
-      inputRef.current?.select()
+      // requestAnimationFrame ensures focus+select fires after dnd-kit's own
+      // post-drag focus cleanup, which would otherwise steal focus back.
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      })
     }
   }, [editing, category.name])
 

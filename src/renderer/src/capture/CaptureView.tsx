@@ -1,20 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Category } from '@shared/types'
+import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 
 const MAX_SUGGESTIONS = 6
 
-// "#token" at the very end of the input (token = no spaces, no further #).
-const TRAILING_HASHTAG = /#([^\s#]*)\s*$/
-
 const LAST_CAT_KEY = 'jot:lastCategoryId'
-
-function normalize(value: string): string {
-  return value.toLowerCase().replace(/\s+/g, '')
-}
-
-function stripTrailingHashtag(text: string): string {
-  return text.replace(TRAILING_HASHTAG, '').trim()
-}
 
 export function Capture(): JSX.Element {
   const [text, setText] = useState('')

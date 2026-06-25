@@ -10,9 +10,12 @@ import {
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Category, JotState, Todo } from '@shared/types'
+import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
+
+const MAX_ADD_SUGGESTIONS = 6
 
 const EMPTY_STATE: JotState = { todos: [], categories: [] }
 
@@ -20,6 +23,7 @@ export function App(): JSX.Element {
   const [state, setState] = useState<JotState>(EMPTY_STATE)
   const [filter, setFilter] = useState<string>('all')
   const [draft, setDraft] = useState('')
+  const [addSuggestionIndex, setAddSuggestionIndex] = useState(0)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -93,6 +97,23 @@ export function App(): JSX.Element {
     })
   }, [open])
 
+  const addPartial = useMemo(() => {
+    const match = draft.match(TRAILING_HASHTAG)
+    return match !== null ? match[1] : null
+  }, [draft])
+
+  const addSuggestions = useMemo(() => {
+    if (addPartial === null) {
+      return []
+    }
+    const needle = normalize(addPartial)
+    return state.categories
+      .filter((c) => {
+        return needle.length === 0 || normalize(c.name).includes(needle)
+      })
+      .slice(0, MAX_ADD_SUGGESTIONS)
+  }, [addPartial, state.categories])
+
   const counts = useMemo<Counts>(() => {
     const byCategory: Record<string, number> = {}
     let all = 0
@@ -127,15 +148,45 @@ export function App(): JSX.Element {
     return categoriesById.get(todo.categoryId) ?? null
   }
 
-  async function handleAdd(): Promise<void> {
-    const text = draft.trim()
-    if (text.length === 0) {
+  async function handleAdd(overrideCategoryId?: string | null): Promise<void> {
+    if (overrideCategoryId !== undefined) {
+      // Category explicitly picked from the suggestion dropdown.
+      const text = stripTrailingHashtag(draft).trim()
+      if (text.length === 0) {
+        return
+      }
+      await window.jot.addTodo(text, overrideCategoryId)
+      setDraft('')
+      setAddSuggestionIndex(0)
       return
     }
-    // New items land in the currently filtered list (when a real list is open).
-    const targetCategory = filter === 'all' || filter === 'uncategorized' ? null : filter
-    await window.jot.addTodo(text, targetCategory)
+
+    const match = draft.match(TRAILING_HASHTAG)
+    if (match !== null && match[1].length > 0) {
+      // Trailing #tag typed manually — match or create the list.
+      const rawName = match[1]
+      const text = stripTrailingHashtag(draft).trim()
+      if (text.length === 0) {
+        setDraft('')
+        return
+      }
+      const existing = state.categories.find((c) => {
+        return normalize(c.name) === normalize(rawName)
+      })
+      const categoryId =
+        existing !== undefined ? existing.id : await window.jot.addCategory(rawName)
+      await window.jot.addTodo(text, categoryId)
+    } else {
+      // No tag — land in the currently filtered list.
+      const text = draft.trim()
+      if (text.length === 0) {
+        return
+      }
+      const categoryId = filter === 'all' || filter === 'uncategorized' ? null : filter
+      await window.jot.addTodo(text, categoryId)
+    }
     setDraft('')
+    setAddSuggestionIndex(0)
   }
 
   function handleDragStart(event: DragStartEvent): void {
@@ -217,25 +268,84 @@ export function App(): JSX.Element {
           />
 
           <main className="main-pane">
-            <div className="add-row">
-              <input
-                autoFocus
-                className="add-input"
-                placeholder="Add a todo…"
-                value={draft}
-                onChange={(event) => {
-                  setDraft(event.target.value)
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault()
-                    handleAdd()
-                  }
-                }}
-              />
-              <button className="add-button" onClick={handleAdd}>
-                Add
-              </button>
+            <div className="add-area">
+              <div className="add-row">
+                <input
+                  autoFocus
+                  className="add-input"
+                  placeholder="Add a todo… (#list to file)"
+                  value={draft}
+                  onChange={(event) => {
+                    setDraft(event.target.value)
+                    setAddSuggestionIndex(0)
+                  }}
+                  onKeyDown={(event) => {
+                    if (addSuggestions.length > 0) {
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault()
+                        setAddSuggestionIndex((i) => (i + 1) % addSuggestions.length)
+                        return
+                      }
+                      if (event.key === 'ArrowUp') {
+                        event.preventDefault()
+                        setAddSuggestionIndex(
+                          (i) => (i - 1 + addSuggestions.length) % addSuggestions.length
+                        )
+                        return
+                      }
+                      if (event.key === 'Tab') {
+                        event.preventDefault()
+                        const chosen = addSuggestions[addSuggestionIndex]
+                        if (chosen !== undefined) {
+                          setDraft(
+                            `${stripTrailingHashtag(draft)} #${normalize(chosen.name)} `.replace(
+                              /^\s+/,
+                              ''
+                            )
+                          )
+                        }
+                        return
+                      }
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        const chosen = addSuggestions[addSuggestionIndex]
+                        if (chosen !== undefined) {
+                          handleAdd(chosen.id)
+                        }
+                        return
+                      }
+                    }
+                    if (event.key === 'Enter') {
+                      event.preventDefault()
+                      handleAdd()
+                    }
+                  }}
+                />
+                <button className="add-button" onClick={() => handleAdd()}>
+                  Add
+                </button>
+              </div>
+
+              {addSuggestions.length > 0 ? (
+                <div className="add-suggestions">
+                  {addSuggestions.map((category, index) => {
+                    const cls = index === addSuggestionIndex ? 'suggestion active' : 'suggestion'
+                    return (
+                      <button
+                        key={category.id}
+                        className={cls}
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          handleAdd(category.id)
+                        }}
+                      >
+                        <span className="cat-dot" style={{ background: category.color }} />
+                        {category.name}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
             </div>
 
             <SortableContext items={openIds} strategy={verticalListSortingStrategy}>
