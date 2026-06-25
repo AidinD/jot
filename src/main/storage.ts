@@ -14,7 +14,7 @@ export interface StorageAdapter {
   save: (state: JotState) => Promise<void>
 }
 
-function normalizeTodo(raw: Partial<Todo> & Record<string, unknown>): Todo {
+function normalizeTodo(raw: any): Todo {
   let status: TodoStatus = 'open'
   if (raw.status === 'open' || raw.status === 'in-progress' || raw.status === 'done') {
     status = raw.status
