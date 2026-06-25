@@ -218,6 +218,7 @@ export function App(): JSX.Element {
     }
     const activeId = String(active.id)
     const overId = String(over.id)
+    const todoId = activeId
 
     if (activeId.startsWith('cat:') && overId.startsWith('drop:cat:')) {
       const activeCatId = activeId.slice('cat:'.length)
@@ -233,7 +234,6 @@ export function App(): JSX.Element {
     }
 
     if (overId.startsWith('drop:')) {
-      const todoId = activeId
       const target = overId.slice('drop:'.length)
       if (target === 'uncat') {
         await window.jot.setTodoCategory(todoId, null)
