@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -9,11 +9,13 @@ import {
 } from '@dnd-kit/core'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import type { Category, JotState, Todo } from '@shared/types'
+import type { Category, JotState, Todo, TodoStatus } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
+import { DetailPanel } from './DetailPanel'
+import { BoardView } from './BoardView'
 
 const MAX_ADD_SUGGESTIONS = 6
 
@@ -26,6 +28,13 @@ export function App(): JSX.Element {
   const [addSuggestionIndex, setAddSuggestionIndex] = useState(0)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+
+  const [viewMode, setViewMode] = useState<'list' | 'board'>(
+    () => (localStorage.getItem('jot:viewMode') as 'list' | 'board') || 'list'
+  )
+  const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
+  const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -49,6 +58,16 @@ export function App(): JSX.Element {
     }
   }, [])
 
+  useEffect(() => {
+    localStorage.setItem('jot:viewMode', viewMode)
+  }, [viewMode])
+
+  useEffect(() => {
+    if (toast === null) return
+    const timer = setTimeout(() => setToast(null), 2000)
+    return () => clearTimeout(timer)
+  }, [toast])
+
   const categoriesById = useMemo(() => {
     const map = new Map<string, Category>()
     for (const category of state.categories) {
@@ -57,7 +76,6 @@ export function App(): JSX.Element {
     return map
   }, [state.categories])
 
-  // Reset the filter if the selected category was deleted elsewhere.
   useEffect(() => {
     if (filter === 'all' || filter === 'uncategorized') {
       return
@@ -80,15 +98,11 @@ export function App(): JSX.Element {
   }, [state.todos, filter])
 
   const open = useMemo(() => {
-    return visible.filter((todo) => {
-      return !todo.done
-    })
+    return visible.filter((todo) => todo.status !== 'done')
   }, [visible])
 
   const done = useMemo(() => {
-    return visible.filter((todo) => {
-      return todo.done
-    })
+    return visible.filter((todo) => todo.status === 'done')
   }, [visible])
 
   const openIds = useMemo(() => {
@@ -119,7 +133,7 @@ export function App(): JSX.Element {
     let all = 0
     let uncategorized = 0
     for (const todo of state.todos) {
-      if (todo.done) {
+      if (todo.status === 'done') {
         continue
       }
       all += 1
@@ -141,6 +155,11 @@ export function App(): JSX.Element {
     }) ?? null
   }, [activeId, state.todos])
 
+  const selectedTodo = useMemo(() => {
+    if (selectedTodoId === null) return null
+    return state.todos.find((t) => t.id === selectedTodoId) ?? null
+  }, [selectedTodoId, state.todos])
+
   function categoryFor(todo: Todo): Category | null {
     if (todo.categoryId === null) {
       return null
@@ -150,7 +169,6 @@ export function App(): JSX.Element {
 
   async function handleAdd(overrideCategoryId?: string | null): Promise<void> {
     if (overrideCategoryId !== undefined) {
-      // Category explicitly picked from the suggestion dropdown.
       const text = stripTrailingHashtag(draft).trim()
       if (text.length === 0) {
         return
@@ -163,7 +181,6 @@ export function App(): JSX.Element {
 
     const match = draft.match(TRAILING_HASHTAG)
     if (match !== null && match[1].length > 0) {
-      // Trailing #tag typed manually — match or create the list.
       const rawName = match[1]
       const text = stripTrailingHashtag(draft).trim()
       if (text.length === 0) {
@@ -177,7 +194,6 @@ export function App(): JSX.Element {
         existing !== undefined ? existing.id : await window.jot.addCategory(rawName)
       await window.jot.addTodo(text, categoryId)
     } else {
-      // No tag — land in the currently filtered list.
       const text = draft.trim()
       if (text.length === 0) {
         return
@@ -202,7 +218,6 @@ export function App(): JSX.Element {
     const todoId = String(active.id)
     const overId = String(over.id)
 
-    // Dropped onto a sidebar target → assign / create-and-assign.
     if (overId.startsWith('drop:')) {
       const target = overId.slice('drop:'.length)
       if (target === 'uncat') {
@@ -219,10 +234,14 @@ export function App(): JSX.Element {
         await window.jot.setTodoCategory(todoId, target.slice('cat:'.length))
         return
       }
+      if (target.startsWith('status:')) {
+        const status = target.slice('status:'.length) as TodoStatus
+        await window.jot.setStatus(todoId, status)
+        return
+      }
       return
     }
 
-    // Otherwise it is a reorder within the visible open list.
     if (todoId !== overId) {
       const oldIndex = openIds.indexOf(todoId)
       const newIndex = openIds.indexOf(overId)
@@ -233,13 +252,46 @@ export function App(): JSX.Element {
     }
   }
 
+  const handleCopy = useCallback(() => {
+    const lines = visible.map((todo) => {
+      const check = todo.status === 'done' ? 'x' : todo.status === 'in-progress' ? '/' : ' '
+      const cat = todo.categoryId ? categoriesById.get(todo.categoryId) : null
+      const tag = cat ? ` (#${cat.name})` : ''
+      return `- [${check}] ${todo.text}${tag}`
+    })
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      setToast(`Copied ${visible.length} tasks`)
+    })
+  }, [visible, categoriesById])
+
   return (
     <div className="app">
       <header className="app-header">
         <h1>
           Jot <span className="version">v{__APP_VERSION__}</span>
         </h1>
-        <span className="hint">Ctrl+Alt+. anywhere</span>
+        <div className="header-actions">
+          <div className="view-toggle">
+            <button
+              className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
+              onClick={() => setViewMode('list')}
+              title="List view (Simple)"
+            >
+              ☰ Simple
+            </button>
+            <button
+              className={`view-toggle-btn${viewMode === 'board' ? ' active' : ''}`}
+              onClick={() => setViewMode('board')}
+              title="Board view (Advanced)"
+            >
+              ▦ Advanced
+            </button>
+          </div>
+          <button className="icon-btn" onClick={handleCopy} title="Copy all visible tasks">
+            📋
+          </button>
+          <span className="hint">Ctrl+Alt+. anywhere</span>
+        </div>
       </header>
 
       <DndContext
@@ -348,71 +400,89 @@ export function App(): JSX.Element {
               ) : null}
             </div>
 
-            <SortableContext items={openIds} strategy={verticalListSortingStrategy}>
-              <ul className="todo-list">
-                {open.map((todo) => {
-                  return (
-                    <TodoItem
-                      key={todo.id}
-                      todo={todo}
-                      category={categoryFor(todo)}
-                      showCategoryTag={filter === 'all'}
-                      onToggle={(id) => {
-                        window.jot.toggleTodo(id)
-                      }}
-                      onRemove={(id) => {
-                        window.jot.removeTodo(id)
-                      }}
-                    />
-                  )
-                })}
-                {open.length === 0 ? <li className="empty">Nothing open here. Nice.</li> : null}
-              </ul>
-            </SortableContext>
+            {viewMode === 'board' ? (
+              <BoardView
+                todos={visible}
+                categoriesById={categoriesById}
+                onSelect={setSelectedTodoId}
+              />
+            ) : (
+              <>
+                <SortableContext items={openIds} strategy={verticalListSortingStrategy}>
+                  <ul className="todo-list">
+                    {open.map((todo) => {
+                      return (
+                        <TodoItem
+                          key={todo.id}
+                          todo={todo}
+                          category={categoryFor(todo)}
+                          showCategoryTag={filter === 'all'}
+                          editingId={editingTodoId}
+                          onSetStatus={(id, status) => window.jot.setStatus(id, status)}
+                          onRemove={(id) => window.jot.removeTodo(id)}
+                          onSelect={setSelectedTodoId}
+                          onStartEdit={setEditingTodoId}
+                          onStopEdit={() => setEditingTodoId(null)}
+                        />
+                      )
+                    })}
+                    {open.length === 0 ? <li className="empty">Nothing open here. Nice.</li> : null}
+                  </ul>
+                </SortableContext>
 
-            {done.length > 0 ? (
-              <section className="done-section">
-                <div className="done-header">
-                  <span>Completed ({done.length})</span>
-                  <button
-                    className="link-button"
-                    onClick={() => {
-                      window.jot.clearCompleted()
-                    }}
-                  >
-                    Clear
-                  </button>
-                </div>
-                <ul className="todo-list">
-                  {done.map((todo) => {
-                    return (
-                      <li key={todo.id} className="todo-row done static">
-                        <label className="todo-label">
-                          <input
-                            type="checkbox"
-                            checked={todo.done}
-                            onChange={() => {
-                              window.jot.toggleTodo(todo.id)
-                            }}
-                          />
-                          <span className="todo-text">{todo.text}</span>
-                        </label>
-                        <button
-                          className="remove-button"
-                          title="Delete"
-                          onClick={() => {
-                            window.jot.removeTodo(todo.id)
-                          }}
-                        >
-                          ×
-                        </button>
-                      </li>
-                    )
-                  })}
-                </ul>
-              </section>
-            ) : null}
+                {done.length > 0 ? (
+                  <section className="done-section">
+                    <div className="done-header">
+                      <span>Completed ({done.length})</span>
+                      <button
+                        className="link-button"
+                        onClick={() => {
+                          window.jot.clearCompleted()
+                        }}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                    <ul className="todo-list">
+                      {done.map((todo) => {
+                        return (
+                          <li key={todo.id} className="todo-row done static">
+                            <label className="todo-label">
+                              <input
+                                type="checkbox"
+                                checked={todo.status === 'done'}
+                                onChange={() => {
+                                  window.jot.setStatus(todo.id, 'open')
+                                }}
+                              />
+                              <span className="todo-text">{todo.text}</span>
+                            </label>
+                            <button
+                              className="remove-button"
+                              title="Delete"
+                              onClick={() => {
+                                window.jot.removeTodo(todo.id)
+                              }}
+                            >
+                              ×
+                            </button>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </section>
+                ) : null}
+              </>
+            )}
           </main>
+
+          {selectedTodo !== null ? (
+            <DetailPanel
+              todo={selectedTodo}
+              category={categoryFor(selectedTodo)}
+              onClose={() => setSelectedTodoId(null)}
+            />
+          ) : null}
         </div>
 
         <DragOverlay>
@@ -420,6 +490,8 @@ export function App(): JSX.Element {
             <TodoCard todo={activeTodo} category={categoryFor(activeTodo)} />
           ) : null}
         </DragOverlay>
+
+        {toast !== null ? <div className="copy-toast">{toast}</div> : null}
       </DndContext>
     </div>
   )
