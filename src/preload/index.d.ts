@@ -15,6 +15,7 @@ interface JotBridge {
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   removeCategory: (id: string) => Promise<void>
+  reorderCategories: (orderedIds: string[]) => Promise<void>
   onChanged: (callback: (state: JotState) => void) => () => void
 }
 

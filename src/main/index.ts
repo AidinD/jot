@@ -1,6 +1,6 @@
 import { join } from 'path'
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray, dialog } from 'electron'
-import { electronApp, optimizer } from '@electron-toolkit/utils'
+import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { LocalJsonStorage } from './storage'
 import { TodoStore } from './store'
 import { loadPrefs, savePrefs } from './prefs'
@@ -180,6 +180,9 @@ function registerIpc(): void {
   ipcMain.handle('categories:remove', (_event, id: string) => {
     return store.removeCategory(id)
   })
+  ipcMain.handle('categories:reorder', (_event, orderedIds: string[]) => {
+    return store.reorderCategories(orderedIds)
+  })
 
   ipcMain.handle('capture:submit', async (_event, text: string, categoryId: string | null) => {
     await store.addTodo(text, categoryId)
@@ -210,6 +213,12 @@ app.whenReady().then(async () => {
 
   mainWindow = createMainWindow()
   captureWindow = createCaptureWindow()
+  
+  if (is.dev) {
+    mainWindow.show()
+    mainWindow.webContents.openDevTools()
+  }
+
   initAutoLaunch()
   buildTray()
 

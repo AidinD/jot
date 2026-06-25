@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useDroppable } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import type { Category } from '@shared/types'
 
 export interface Counts {
@@ -52,33 +54,35 @@ export function Sidebar({
       />
 
       <div className="sidebar-heading">Lists</div>
-      {categories.map((category) => {
-        return (
-          <CategoryRow
-            key={category.id}
-            category={category}
-            count={counts.byCategory[category.id] ?? 0}
-            active={filter === category.id}
-            editing={editingId === category.id}
-            onClick={() => {
-              onFilter(category.id)
-            }}
-            onStartEdit={() => {
-              setEditingId(category.id)
-            }}
-            onRename={(name) => {
-              onRenameCategory(category.id, name)
-              setEditingId(null)
-            }}
-            onCancelEdit={() => {
-              setEditingId(null)
-            }}
-            onRemove={() => {
-              onRemoveCategory(category.id)
-            }}
-          />
-        )
-      })}
+      <SortableContext items={categories.map((c) => `cat:${c.id}`)} strategy={verticalListSortingStrategy}>
+        {categories.map((category) => {
+          return (
+            <CategoryRow
+              key={category.id}
+              category={category}
+              count={counts.byCategory[category.id] ?? 0}
+              active={filter === category.id}
+              editing={editingId === category.id}
+              onClick={() => {
+                onFilter(category.id)
+              }}
+              onStartEdit={() => {
+                setEditingId(category.id)
+              }}
+              onRename={(name) => {
+                onRenameCategory(category.id, name)
+                setEditingId(null)
+              }}
+              onCancelEdit={() => {
+                setEditingId(null)
+              }}
+              onRemove={() => {
+                onRemoveCategory(category.id)
+              }}
+            />
+          )
+        })}
+      </SortableContext>
 
       <NewCategoryZone />
       <AddCategoryInput onAdd={onAddCategory} />
@@ -149,7 +153,8 @@ function CategoryRow({
   onCancelEdit: () => void
   onRemove: () => void
 }): JSX.Element {
-  const { setNodeRef, isOver } = useDroppable({ id: `drop:cat:${category.id}` })
+  const { setNodeRef: setSortableNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: `cat:${category.id}`, data: { type: 'category' } })
+  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({ id: `drop:cat:${category.id}` })
   const [draft, setDraft] = useState(category.name)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -165,11 +170,21 @@ function CategoryRow({
     }
   }, [editing, category.name])
 
-  const className = `side-row category${active ? ' active' : ''}${isOver ? ' drop-over' : ''}`
+  const className = `side-row category${active ? ' active' : ''}${isOver ? ' drop-over' : ''}${isDragging ? ' dragging' : ''}`
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.35 : 1
+  }
+
+  function setRefs(node: HTMLElement | null): void {
+    setSortableNodeRef(node)
+    setDroppableNodeRef(node)
+  }
 
   if (editing) {
     return (
-      <div ref={setNodeRef} className={className}>
+      <div ref={setRefs} style={style} className={className}>
         <span className="cat-dot" style={{ background: category.color }} />
         <input
           ref={inputRef}
@@ -195,8 +210,8 @@ function CategoryRow({
   }
 
   return (
-    <div ref={setNodeRef} className={className}>
-      <button className="side-main" onClick={onClick} onDoubleClick={onStartEdit}>
+    <div ref={setRefs} style={style} className={className}>
+      <button className="side-main" onClick={onClick} onDoubleClick={onStartEdit} {...attributes} {...listeners}>
         <span className="cat-dot" style={{ background: category.color }} />
         <span className="side-label">{category.name}</span>
       </button>

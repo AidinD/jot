@@ -32,6 +32,7 @@ export function App(): JSX.Element {
   const [viewMode, setViewMode] = useState<'list' | 'board'>(
     () => (localStorage.getItem('jot:viewMode') as 'list' | 'board') || 'list'
   )
+  const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(false)
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -215,10 +216,24 @@ export function App(): JSX.Element {
     if (over === null) {
       return
     }
-    const todoId = String(active.id)
+    const activeId = String(active.id)
     const overId = String(over.id)
 
+    if (activeId.startsWith('cat:') && overId.startsWith('drop:cat:')) {
+      const activeCatId = activeId.slice('cat:'.length)
+      const overCatId = overId.slice('drop:cat:'.length)
+      const catIds = state.categories.map((c) => c.id)
+      const oldIndex = catIds.indexOf(activeCatId)
+      const newIndex = catIds.indexOf(overCatId)
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const newOrder = arrayMove(catIds, oldIndex, newIndex)
+        await window.jot.reorderCategories(newOrder)
+      }
+      return
+    }
+
     if (overId.startsWith('drop:')) {
+      const todoId = activeId
       const target = overId.slice('drop:'.length)
       if (target === 'uncat') {
         await window.jot.setTodoCategory(todoId, null)
@@ -253,16 +268,16 @@ export function App(): JSX.Element {
   }
 
   const handleCopy = useCallback(() => {
-    const lines = visible.map((todo) => {
-      const check = todo.status === 'done' ? 'x' : todo.status === 'in-progress' ? '/' : ' '
+    const lines = open.map((todo) => {
+      const check = todo.status === 'in-progress' ? '/' : ' '
       const cat = todo.categoryId ? categoriesById.get(todo.categoryId) : null
       const tag = cat ? ` (#${cat.name})` : ''
       return `- [${check}] ${todo.text}${tag}`
     })
     navigator.clipboard.writeText(lines.join('\n')).then(() => {
-      setToast(`Copied ${visible.length} tasks`)
+      setToast(`Copied ${open.length} tasks`)
     })
-  }, [visible, categoriesById])
+  }, [open, categoriesById])
 
   return (
     <div className="app">
@@ -432,44 +447,50 @@ export function App(): JSX.Element {
 
                 {done.length > 0 ? (
                   <section className="done-section">
-                    <div className="done-header">
-                      <span>Completed ({done.length})</span>
+                    <div className="done-header" style={{ cursor: 'pointer', userSelect: 'none' }} onClick={() => setIsCompletedCollapsed(!isCompletedCollapsed)}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ transform: isCompletedCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease', fontSize: 10 }}>▼</span>
+                        Completed ({done.length})
+                      </span>
                       <button
                         className="link-button"
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
                           window.jot.clearCompleted()
                         }}
                       >
                         Clear
                       </button>
                     </div>
-                    <ul className="todo-list">
-                      {done.map((todo) => {
-                        return (
-                          <li key={todo.id} className="todo-row done static">
-                            <label className="todo-label">
-                              <input
-                                type="checkbox"
-                                checked={todo.status === 'done'}
-                                onChange={() => {
-                                  window.jot.setStatus(todo.id, 'open')
+                    {!isCompletedCollapsed && (
+                      <ul className="todo-list">
+                        {done.map((todo) => {
+                          return (
+                            <li key={todo.id} className="todo-row done static">
+                              <label className="todo-label">
+                                <input
+                                  type="checkbox"
+                                  checked={todo.status === 'done'}
+                                  onChange={() => {
+                                    window.jot.setStatus(todo.id, 'open')
+                                  }}
+                                />
+                                <span className="todo-text">{todo.text}</span>
+                              </label>
+                              <button
+                                className="remove-button"
+                                title="Delete"
+                                onClick={() => {
+                                  window.jot.removeTodo(todo.id)
                                 }}
-                              />
-                              <span className="todo-text">{todo.text}</span>
-                            </label>
-                            <button
-                              className="remove-button"
-                              title="Delete"
-                              onClick={() => {
-                                window.jot.removeTodo(todo.id)
-                              }}
-                            >
-                              ×
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
+                              >
+                                ×
+                              </button>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
                   </section>
                 ) : null}
               </>

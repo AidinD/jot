@@ -45,9 +45,11 @@ export function TodoItem({
     }
   }, [isEditing, todo.text])
 
-  function cycleStatus(): void {
+  function cycleStatus(reverse: boolean = false): void {
     const currentIndex = STATUS_CYCLE.indexOf(todo.status)
-    const nextStatus = STATUS_CYCLE[(currentIndex + 1) % STATUS_CYCLE.length]
+    let nextIndex = currentIndex + (reverse ? -1 : 1)
+    if (nextIndex < 0) nextIndex = STATUS_CYCLE.length - 1
+    const nextStatus = STATUS_CYCLE[nextIndex % STATUS_CYCLE.length]
     onSetStatus(todo.id, nextStatus)
   }
 
@@ -75,7 +77,11 @@ export function TodoItem({
       <button
         className={`status-checkbox ${todo.status}`}
         title={`Status: ${todo.status} (click to cycle)`}
-        onClick={cycleStatus}
+        onClick={() => cycleStatus(false)}
+        onContextMenu={(e) => {
+          e.preventDefault()
+          cycleStatus(true)
+        }}
       />
       {showCategoryTag && category !== null ? (
         <span className="cat-dot" style={{ background: category.color }} title={category.name} />
