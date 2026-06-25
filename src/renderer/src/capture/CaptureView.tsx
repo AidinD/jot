@@ -6,6 +6,8 @@ const MAX_SUGGESTIONS = 6
 // "#token" at the very end of the input (token = no spaces, no further #).
 const TRAILING_HASHTAG = /#([^\s#]*)\s*$/
 
+const LAST_CAT_KEY = 'jot:lastCategoryId'
+
 function normalize(value: string): string {
   return value.toLowerCase().replace(/\s+/g, '')
 }
@@ -18,6 +20,9 @@ export function Capture(): JSX.Element {
   const [text, setText] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
+  const [lastCategoryId, setLastCategoryId] = useState<string | null>(() => {
+    return localStorage.getItem(LAST_CAT_KEY)
+  })
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -42,6 +47,36 @@ export function Capture(): JSX.Element {
       unsubscribeReset()
     }
   }, [])
+
+  // If the referenced category was deleted, drop the stored preference.
+  useEffect(() => {
+    if (lastCategoryId !== null && categories.length > 0) {
+      const exists = categories.some((c) => c.id === lastCategoryId)
+      if (!exists) {
+        localStorage.removeItem(LAST_CAT_KEY)
+        setLastCategoryId(null)
+      }
+    }
+  }, [categories, lastCategoryId])
+
+  const lastCategory = useMemo(() => {
+    if (lastCategoryId === null) {
+      return null
+    }
+    return categories.find((c) => c.id === lastCategoryId) ?? null
+  }, [lastCategoryId, categories])
+
+  function persistLastCategory(categoryId: string | null): void {
+    if (categoryId !== null) {
+      localStorage.setItem(LAST_CAT_KEY, categoryId)
+      setLastCategoryId(categoryId)
+    }
+  }
+
+  function clearLastCategory(): void {
+    localStorage.removeItem(LAST_CAT_KEY)
+    setLastCategoryId(null)
+  }
 
   // Active #partial being typed at the end of the input, if any.
   const partial = useMemo(() => {
@@ -71,6 +106,7 @@ export function Capture(): JSX.Element {
       return
     }
     window.capture.submit(trimmed, categoryId)
+    persistLastCategory(categoryId)
     setText('')
     setActiveIndex(0)
   }
@@ -87,7 +123,8 @@ export function Capture(): JSX.Element {
   async function submitFromText(): Promise<void> {
     const match = text.match(TRAILING_HASHTAG)
     if (match === null || match[1].length === 0) {
-      submitWith(text, null)
+      // No #tag typed — fall back to the last-used category if one is pinned.
+      submitWith(text, lastCategoryId)
       return
     }
     const rawName = match[1]
@@ -111,6 +148,13 @@ export function Capture(): JSX.Element {
     if (event.key === 'Escape') {
       event.preventDefault()
       window.capture.close()
+      return
+    }
+
+    // Backspace on empty input clears the pinned last-category chip.
+    if (event.key === 'Backspace' && text === '' && lastCategoryId !== null) {
+      event.preventDefault()
+      clearLastCategory()
       return
     }
 
@@ -187,6 +231,24 @@ export function Capture(): JSX.Element {
               </button>
             )
           })}
+        </div>
+      ) : lastCategory !== null ? (
+        <div className="capture-hint">
+          <div className="last-cat-chip">
+            <span className="cat-dot" style={{ background: lastCategory.color }} />
+            <span className="last-cat-chip-name">{lastCategory.name}</span>
+            <button
+              className="last-cat-chip-remove"
+              onMouseDown={(event) => {
+                event.preventDefault()
+                clearLastCategory()
+                inputRef.current?.focus()
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <span>Backspace to clear</span>
         </div>
       ) : (
         <div className="capture-hint">
