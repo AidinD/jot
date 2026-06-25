@@ -35,9 +35,14 @@ export class TodoStore {
   async init(): Promise<void> {
     this.state = await this.storage.load()
     if (this.storage.watch !== undefined) {
-      this.stopWatching = this.storage.watch(() => {
-        void this.reloadFromDisk()
-      })
+      try {
+        this.stopWatching = this.storage.watch(() => {
+          void this.reloadFromDisk()
+        })
+      } catch (error) {
+        console.error('Failed to start storage watch', error)
+        this.stopWatching = null
+      }
     }
   }
 
