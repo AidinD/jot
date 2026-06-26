@@ -17,5 +17,5 @@ sync is not needed right now.
 
 ## Auto-update via GitHub
 
-Like Loom — needs `latest.yml` plus an `electron-builder` publish config and a
+Like Loom â€” needs `latest.yml` plus an `electron-builder` publish config and a
 release-upload step. Optional.

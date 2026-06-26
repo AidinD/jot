@@ -76,3 +76,11 @@ transcript for the step-by-step; this file is only the choices worth revisiting.
 - Why: Jot already has a single JSON source of truth. A live file watch plus
   an `INTEGRATION.md` contract gives Claude/Antigravity direct read/write
   access with far less complexity than a separate protocol layer.
+
+## 2026-06-26 — Reinstall after every release
+
+**Every new Jot release is installed locally before handoff.**
+- Alternatives: only publish the GitHub release, or leave local install manual.
+- Why: the installed Windows app is the real day-to-day runtime. Reinstalling
+  after each release catches packaging and startup regressions immediately and
+  keeps the machine in sync with the latest shipped build.
