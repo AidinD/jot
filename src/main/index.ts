@@ -169,7 +169,7 @@ function registerIpc(): void {
       filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'] }]
     })
     if (!result.canceled && result.filePaths.length > 0) {
-      return store.addImage(todoId, result.filePaths[0])
+      await store.addImage(todoId, result.filePaths[0])
     }
   })
   ipcMain.handle('todos:removeImage', (_event, todoId: string, imagePath: string) => {
