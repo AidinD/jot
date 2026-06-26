@@ -216,22 +216,35 @@ export function App(): JSX.Element {
     if (over === null) {
       return
     }
-    const activeId = String(active.id)
+    const draggedId = String(active.id)
     const overId = String(over.id)
-    const todoId = activeId
 
-    if (activeId.startsWith('cat:') && overId.startsWith('drop:cat:')) {
-      const activeCatId = activeId.slice('cat:'.length)
-      const overCatId = overId.slice('drop:cat:'.length)
-      const catIds = state.categories.map((c) => c.id)
-      const oldIndex = catIds.indexOf(activeCatId)
-      const newIndex = catIds.indexOf(overCatId)
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const newOrder = arrayMove(catIds, oldIndex, newIndex)
-        await window.jot.reorderCategories(newOrder)
+    // Category drag: reorder or ignore. useSortable gives overId 'cat:X';
+    // useDroppable gives 'drop:cat:X' — accept both since closestCenter is
+    // non-deterministic when both are on the same DOM node. Early return prevents
+    // categories from ever reaching the todo-drop paths below.
+    if (draggedId.startsWith('cat:')) {
+      const activeCatId = draggedId.slice('cat:'.length)
+      let overCatId: string | null = null
+      if (overId.startsWith('drop:cat:')) {
+        overCatId = overId.slice('drop:cat:'.length)
+      } else if (overId.startsWith('cat:')) {
+        overCatId = overId.slice('cat:'.length)
+      }
+      if (overCatId !== null && overCatId !== activeCatId) {
+        const catIds = state.categories.map((c) => c.id)
+        const oldIndex = catIds.indexOf(activeCatId)
+        const newIndex = catIds.indexOf(overCatId)
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          const newOrder = arrayMove(catIds, oldIndex, newIndex)
+          await window.jot.reorderCategories(newOrder)
+        }
       }
       return
     }
+
+    // Todo drag
+    const todoId = draggedId
 
     if (overId.startsWith('drop:')) {
       const target = overId.slice('drop:'.length)
@@ -257,6 +270,13 @@ export function App(): JSX.Element {
       return
     }
 
+    // Todo dropped directly onto a category row (useSortable id wins over useDroppable)
+    if (overId.startsWith('cat:')) {
+      await window.jot.setTodoCategory(todoId, overId.slice('cat:'.length))
+      return
+    }
+
+    // Todo reorder within the same list
     if (todoId !== overId) {
       const oldIndex = openIds.indexOf(todoId)
       const newIndex = openIds.indexOf(overId)

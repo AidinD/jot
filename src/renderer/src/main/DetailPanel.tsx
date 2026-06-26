@@ -29,15 +29,6 @@ export function DetailPanel({ todo, category, onClose }: DetailPanelProps): JSX.
     }
   }, [todo.id, todo.text, todo.description])
 
-  // Also sync when external state updates (e.g. from broadcast)
-  useEffect(() => {
-    setTitle(todo.text)
-  }, [todo.text])
-
-  useEffect(() => {
-    setDescription(todo.description)
-  }, [todo.description])
-
   // Resolve image paths
   useEffect(() => {
     let active = true
@@ -45,10 +36,14 @@ export function DetailPanel({ todo, category, onClose }: DetailPanelProps): JSX.
     Promise.all(
       todo.images.map(async (rel) => {
         const abs = await window.jot.getImagePath(rel)
-        if (active) paths.set(rel, abs)
+        if (active) {
+          paths.set(rel, abs)
+        }
       })
     ).then(() => {
-      if (active) setImagePaths(new Map(paths))
+      if (active) {
+        setImagePaths(new Map(paths))
+      }
     })
     return () => { active = false }
   }, [todo.images])

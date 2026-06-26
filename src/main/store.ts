@@ -29,6 +29,7 @@ export class TodoStore {
   private readonly listeners = new Set<ChangeListener>()
   private stopWatching: (() => void) | null = null
   private reloadInFlight: Promise<void> | null = null
+  private reloadQueued = false
 
   constructor(private readonly storage: StorageAdapter) {}
 
@@ -287,6 +288,7 @@ export class TodoStore {
 
   private async reloadFromDisk(): Promise<void> {
     if (this.reloadInFlight !== null) {
+      this.reloadQueued = true
       return this.reloadInFlight
     }
 
@@ -302,6 +304,10 @@ export class TodoStore {
         console.error('Failed to reload Jot state from disk', error)
       } finally {
         this.reloadInFlight = null
+        if (this.reloadQueued) {
+          this.reloadQueued = false
+          void this.reloadFromDisk()
+        }
       }
     })()
 
