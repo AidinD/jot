@@ -21,6 +21,39 @@ const MAX_ADD_SUGGESTIONS = 6
 
 const EMPTY_STATE: JotState = { todos: [], categories: [] }
 
+type SortMode = 'manual' | 'status' | 'date'
+
+const SORT_OPTIONS: { value: SortMode; label: string }[] = [
+  { value: 'manual', label: 'Manual' },
+  { value: 'status', label: 'Status' },
+  { value: 'date', label: 'Date' }
+]
+
+// In-progress floats to the top, then open. (Done lives in its own section.)
+const STATUS_RANK: Record<TodoStatus, number> = {
+  'in-progress': 0,
+  open: 1,
+  done: 2
+}
+
+/**
+ * Returns a sorted copy for the chosen mode. Manual returns the list as-is
+ * (the drag order). Array sort is stable, so items keep their manual order
+ * within each status group.
+ */
+function sortTodos(list: Todo[], mode: SortMode): Todo[] {
+  if (mode === 'manual') {
+    return list
+  }
+  const sorted = [...list]
+  if (mode === 'date') {
+    sorted.sort((a, b) => b.createdAt - a.createdAt)
+  } else if (mode === 'status') {
+    sorted.sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status])
+  }
+  return sorted
+}
+
 export function App(): JSX.Element {
   const [state, setState] = useState<JotState>(EMPTY_STATE)
   const [filter, setFilter] = useState<string>('all')
@@ -31,6 +64,9 @@ export function App(): JSX.Element {
 
   const [viewMode, setViewMode] = useState<'list' | 'board'>(
     () => (localStorage.getItem('jot:viewMode') as 'list' | 'board') || 'list'
+  )
+  const [sortMode, setSortMode] = useState<SortMode>(
+    () => (localStorage.getItem('jot:sortMode') as SortMode) || 'manual'
   )
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(false)
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
@@ -62,6 +98,10 @@ export function App(): JSX.Element {
   useEffect(() => {
     localStorage.setItem('jot:viewMode', viewMode)
   }, [viewMode])
+
+  useEffect(() => {
+    localStorage.setItem('jot:sortMode', sortMode)
+  }, [sortMode])
 
   useEffect(() => {
     if (toast === null) return
@@ -102,15 +142,19 @@ export function App(): JSX.Element {
     return visible.filter((todo) => todo.status !== 'done')
   }, [visible])
 
+  const displayOpen = useMemo(() => {
+    return sortTodos(open, sortMode)
+  }, [open, sortMode])
+
   const done = useMemo(() => {
     return visible.filter((todo) => todo.status === 'done')
   }, [visible])
 
   const openIds = useMemo(() => {
-    return open.map((todo) => {
+    return displayOpen.map((todo) => {
       return todo.id
     })
-  }, [open])
+  }, [displayOpen])
 
   const addPartial = useMemo(() => {
     const match = draft.match(TRAILING_HASHTAG)
@@ -306,6 +350,20 @@ export function App(): JSX.Element {
           Jot <span className="version">v{__APP_VERSION__}</span>
         </h1>
         <div className="header-actions">
+          <label className="sort-control" title="Sort the open list">
+            <span className="sort-label">Sort</span>
+            <select
+              className="sort-select"
+              value={sortMode}
+              onChange={(e) => setSortMode(e.target.value as SortMode)}
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="view-toggle">
             <button
               className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
@@ -445,7 +503,7 @@ export function App(): JSX.Element {
               <>
                 <SortableContext items={openIds} strategy={verticalListSortingStrategy}>
                   <ul className="todo-list">
-                    {open.map((todo) => {
+                    {displayOpen.map((todo) => {
                       return (
                         <TodoItem
                           key={todo.id}
@@ -453,6 +511,7 @@ export function App(): JSX.Element {
                           category={categoryFor(todo)}
                           showCategoryTag={filter === 'all'}
                           editingId={editingTodoId}
+                          sortable={sortMode === 'manual'}
                           onSetStatus={(id, status) => window.jot.setStatus(id, status)}
                           onRemove={(id) => window.jot.removeTodo(id)}
                           onSelect={setSelectedTodoId}
@@ -461,7 +520,9 @@ export function App(): JSX.Element {
                         />
                       )
                     })}
-                    {open.length === 0 ? <li className="empty">Nothing open here. Nice.</li> : null}
+                    {displayOpen.length === 0 ? (
+                      <li className="empty">Nothing open here. Nice.</li>
+                    ) : null}
                   </ul>
                 </SortableContext>
 

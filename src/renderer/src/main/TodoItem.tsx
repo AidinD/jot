@@ -10,6 +10,7 @@ interface TodoItemProps {
   category: Category | null
   showCategoryTag: boolean
   editingId: string | null
+  sortable: boolean
   onSetStatus: (id: string, status: TodoStatus) => void
   onRemove: (id: string) => void
   onSelect: (id: string) => void
@@ -22,6 +23,7 @@ export function TodoItem({
   category,
   showCategoryTag,
   editingId,
+  sortable,
   onSetStatus,
   onRemove,
   onSelect,
@@ -29,7 +31,7 @@ export function TodoItem({
   onStopEdit
 }: TodoItemProps): JSX.Element {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: todo.id })
+    useSortable({ id: todo.id, disabled: !sortable })
   const [draft, setDraft] = useState(todo.text)
   const inputRef = useRef<HTMLInputElement>(null)
   const isEditing = editingId === todo.id
@@ -71,9 +73,18 @@ export function TodoItem({
 
   return (
     <li ref={setNodeRef} style={style} className={rowClass}>
-      <button className="drag-handle" title="Drag to reorder or onto a list" {...attributes} {...listeners}>
-        ⠿
-      </button>
+      {sortable ? (
+        <button
+          className="drag-handle"
+          title="Drag to reorder or onto a list"
+          {...attributes}
+          {...listeners}
+        >
+          ⠿
+        </button>
+      ) : (
+        <span className="drag-handle placeholder" aria-hidden="true" />
+      )}
       <button
         className={`status-checkbox ${todo.status}`}
         title={`Status: ${todo.status} (click to cycle)`}

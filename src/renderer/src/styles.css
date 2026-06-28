@@ -325,6 +325,12 @@ body {
   cursor: grabbing;
 }
 
+/* Keeps the row's left alignment when drag is disabled (sorted modes). */
+.drag-handle.placeholder {
+  display: inline-block;
+  cursor: default;
+}
+
 .todo-label {
   display: flex;
   align-items: center;
@@ -765,6 +771,31 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-label {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.sort-select {
+  padding: 5px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sort-select:hover {
+  border-color: var(--accent);
 }
 
 .view-toggle {
