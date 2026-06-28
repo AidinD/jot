@@ -223,6 +223,47 @@ export class TodoStore {
     await this.persist()
   }
 
+  /**
+   * Move completed todos out of the active list into archive.json (newest
+   * first), so the working file stays small without losing history. Unlike
+   * clearCompleted this preserves the data. Returns how many were archived.
+   */
+  async archiveCompleted(): Promise<number> {
+    const completed = this.state.todos.filter((todo) => todo.status === 'done')
+    if (completed.length === 0) {
+      return 0
+    }
+
+    const archivePath = join(resolveDataDir(), 'archive.json')
+    let archived: (Todo & { archivedAt?: number })[] = []
+    try {
+      const raw = await fs.readFile(archivePath, 'utf-8')
+      const parsed = JSON.parse(raw.replace(/^﻿/, ''))
+      if (Array.isArray(parsed)) {
+        archived = parsed
+      } else if (parsed !== null && typeof parsed === 'object' && Array.isArray(parsed.todos)) {
+        archived = parsed.todos
+      }
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code !== 'ENOENT') {
+        throw error
+      }
+    }
+
+    const stamped = completed.map((todo) => ({ ...todo, archivedAt: Date.now() }))
+    const next = [...stamped, ...archived]
+
+    await fs.mkdir(dirname(archivePath), { recursive: true })
+    const tempPath = `${archivePath}.tmp`
+    await fs.writeFile(tempPath, JSON.stringify({ todos: next }, null, 2), 'utf-8')
+    await fs.rename(tempPath, archivePath)
+
+    this.state.todos = this.state.todos.filter((todo) => todo.status !== 'done')
+    await this.persist()
+    return completed.length
+  }
+
   async addCategory(name: string): Promise<string> {
     const category: Category = {
       id: randomUUID(),
@@ -250,17 +291,13 @@ export class TodoStore {
   }
 
   /**
-   * Remove a category. Its todos are not deleted — they fall back to
-   * uncategorized so nothing is lost.
+   * Remove a category AND delete every todo filed under it. This is
+   * destructive — the renderer must confirm with the user first (see the
+   * delete-list warning prompt in Sidebar).
    */
   async removeCategory(id: string): Promise<void> {
     this.state.categories = this.state.categories.filter((cat) => cat.id !== id)
-    this.state.todos = this.state.todos.map((todo) => {
-      if (todo.categoryId !== id) {
-        return todo
-      }
-      return { ...todo, categoryId: null }
-    })
+    this.state.todos = this.state.todos.filter((todo) => todo.categoryId !== id)
     await this.persist()
   }
 

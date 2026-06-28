@@ -219,7 +219,18 @@ function CategoryRow({
       <button className="side-action" title="Rename" onClick={onStartEdit}>
         ✎
       </button>
-      <button className="side-action" title="Delete list" onClick={onRemove}>
+      <button
+        className="side-action"
+        title="Delete list"
+        onClick={() => {
+          const confirmed = window.confirm(
+            `Delete the list "${category.name}" and all its tasks? This can't be undone.`
+          )
+          if (confirmed) {
+            onRemove()
+          }
+        }}
+      >
         ×
       </button>
     </div>
