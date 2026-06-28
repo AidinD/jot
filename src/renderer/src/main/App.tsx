@@ -237,6 +237,11 @@ export function App(): JSX.Element {
     return state.todos.find((t) => t.id === selectedTodoId) ?? null
   }, [selectedTodoId, state.todos])
 
+  // Clicking the already-open todo closes the detail panel (toggle).
+  const toggleSelectTodo = useCallback((id: string) => {
+    setSelectedTodoId((prev) => (prev === id ? null : id))
+  }, [])
+
   const pendingDeleteCat = useMemo(() => {
     if (pendingDeleteCatId === null) {
       return null
@@ -534,7 +539,7 @@ export function App(): JSX.Element {
                 todos={visible}
                 categoriesById={categoriesById}
                 tagsById={tagsById}
-                onSelect={setSelectedTodoId}
+                onSelect={toggleSelectTodo}
               />
             ) : (
               <>
@@ -552,7 +557,7 @@ export function App(): JSX.Element {
                           sortable={sortMode === 'manual'}
                           onSetStatus={(id, status) => window.jot.setStatus(id, status)}
                           onRemove={(id) => window.jot.removeTodo(id)}
-                          onSelect={setSelectedTodoId}
+                          onSelect={toggleSelectTodo}
                           onStartEdit={setEditingTodoId}
                           onStopEdit={() => setEditingTodoId(null)}
                         />

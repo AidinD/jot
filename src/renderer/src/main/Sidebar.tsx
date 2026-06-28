@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useDroppable } from '@dnd-kit/core'
+import { useDroppable, useDndContext } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Category } from '@shared/types'
@@ -154,7 +154,16 @@ function CategoryRow({
   onRemove: () => void
 }): JSX.Element {
   const { setNodeRef: setSortableNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: `cat:${category.id}`, data: { type: 'category' } })
-  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({ id: `drop:cat:${category.id}` })
+  const { setNodeRef: setDroppableNodeRef } = useDroppable({ id: `drop:cat:${category.id}` })
+  // This node is registered as both a sortable (`cat:X`) and a droppable
+  // (`drop:cat:X`), so a dragged-over `over.id` can resolve to either. The plain
+  // useDroppable isOver only matches `drop:cat:X` and so missed the highlight.
+  // Read the global `over` and accept either id — but only when a TODO is being
+  // dragged, not during category reorder.
+  const { over, active: activeDrag } = useDndContext()
+  const draggingTodo = activeDrag !== null && activeDrag.data.current?.type !== 'category'
+  const isOver =
+    draggingTodo && (over?.id === `cat:${category.id}` || over?.id === `drop:cat:${category.id}`)
   const [draft, setDraft] = useState(category.name)
   const inputRef = useRef<HTMLInputElement>(null)
 
