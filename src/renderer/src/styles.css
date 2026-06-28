@@ -9,6 +9,7 @@
   --danger: #ff6b6b;
   --amber: #ffb054;
   --green: #5fd0a0;
+  --violet: #b98cff;
   --surface-alt: #2a2c31;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
@@ -418,6 +419,19 @@ body {
   background: var(--amber);
 }
 
+.status-checkbox.review {
+  border-color: var(--violet);
+  background: rgba(185, 140, 255, 0.15);
+}
+
+.status-checkbox.review::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--violet);
+}
+
 .status-checkbox.done {
   border-color: var(--green);
   background: var(--green);
@@ -557,6 +571,11 @@ body {
   background: rgba(255, 176, 84, 0.15);
 }
 
+.detail-status-btn.active[data-status='review'] {
+  border-color: var(--violet);
+  background: rgba(185, 140, 255, 0.15);
+}
+
 .detail-status-btn.active[data-status='done'] {
   border-color: var(--green);
   background: rgba(95, 208, 160, 0.15);
@@ -665,7 +684,7 @@ body {
 
 .board {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   flex: 1;
   min-height: 0;
@@ -698,6 +717,11 @@ body {
 .board-column-header[data-status='in-progress'] {
   background: rgba(255, 176, 84, 0.1);
   color: var(--amber);
+}
+
+.board-column-header[data-status='review'] {
+  background: rgba(185, 140, 255, 0.1);
+  color: var(--violet);
 }
 
 .board-column-header[data-status='done'] {

@@ -29,11 +29,13 @@ const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: 'date', label: 'Date' }
 ]
 
-// In-progress floats to the top, then open. (Done lives in its own section.)
+// In-progress floats to the top, then open, then review (awaiting sign-off).
+// Done lives in its own section.
 const STATUS_RANK: Record<TodoStatus, number> = {
   'in-progress': 0,
   open: 1,
-  done: 2
+  review: 2,
+  done: 3
 }
 
 /**

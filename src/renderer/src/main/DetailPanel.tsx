@@ -4,6 +4,7 @@ import type { Category, Todo, TodoStatus } from '@shared/types'
 const STATUS_OPTIONS: { value: TodoStatus; label: string }[] = [
   { value: 'open', label: 'Open' },
   { value: 'in-progress', label: 'In Progress' },
+  { value: 'review', label: 'Review' },
   { value: 'done', label: 'Done' }
 ]
 

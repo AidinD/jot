@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Category, Todo, TodoStatus } from '@shared/types'
 
-const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'done']
+const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
 
 interface TodoItemProps {
   todo: Todo
