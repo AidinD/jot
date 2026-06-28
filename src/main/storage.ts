@@ -15,6 +15,17 @@ export interface StorageAdapter {
   watch?: (onChange: () => void) => () => void
 }
 
+// Repairs UTF-8 bytes that were stored as Latin-1 codepoints (double-encoding).
+// Matches 0xC2/0xC3 followed by a continuation byte 0x80-0xBF — the exact pattern
+// produced when U+0080-U+00FF characters have their UTF-8 bytes misread as Latin-1.
+function repairDoubleEncoding(str: string): string {
+  return str.replace(/[\u00c2\u00c3][\u0080-\u00bf]/g, (pair) => {
+    const hi = pair.charCodeAt(0)
+    const lo = pair.charCodeAt(1)
+    return String.fromCharCode(((hi & 0x1f) << 6) | (lo & 0x3f))
+  })
+}
+
 function normalizeTodo(raw: any): Todo {
   let status: TodoStatus = 'open'
   if (raw.status === 'open' || raw.status === 'in-progress' || raw.status === 'done') {
@@ -25,9 +36,9 @@ function normalizeTodo(raw: any): Todo {
 
   return {
     id: String(raw.id),
-    text: String(raw.text ?? ''),
+    text: repairDoubleEncoding(String(raw.text ?? '')),
     status,
-    description: String(raw.description ?? ''),
+    description: repairDoubleEncoding(String(raw.description ?? '')),
     images: Array.isArray(raw.images) ? raw.images : [],
     categoryId: raw.categoryId ?? null,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
@@ -50,7 +61,9 @@ function migrate(parsed: unknown): JotState {
     const state = parsed as Partial<JotState>
     return {
       todos: Array.isArray(state.todos) ? state.todos.map(normalizeTodo) : [],
-      categories: Array.isArray(state.categories) ? state.categories : []
+      categories: Array.isArray(state.categories)
+        ? state.categories.map((c) => ({ ...c, name: repairDoubleEncoding(String(c.name ?? '')) }))
+        : []
     }
   }
   return { todos: [], categories: [] }
