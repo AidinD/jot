@@ -1,6 +1,7 @@
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
-import type { Category, Todo, TodoStatus } from '@shared/types'
+import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
+import { TagChips } from './TagChips'
 
 const COLUMNS: { status: TodoStatus; label: string }[] = [
   { status: 'open', label: 'Open' },
@@ -12,10 +13,16 @@ const COLUMNS: { status: TodoStatus; label: string }[] = [
 interface BoardViewProps {
   todos: Todo[]
   categoriesById: Map<string, Category>
+  tagsById: Map<string, Tag>
   onSelect: (id: string) => void
 }
 
-export function BoardView({ todos, categoriesById, onSelect }: BoardViewProps): JSX.Element {
+export function BoardView({
+  todos,
+  categoriesById,
+  tagsById,
+  onSelect
+}: BoardViewProps): JSX.Element {
   return (
     <div className="board">
       {COLUMNS.map((col) => {
@@ -27,6 +34,7 @@ export function BoardView({ todos, categoriesById, onSelect }: BoardViewProps): 
             label={col.label}
             todos={columnTodos}
             categoriesById={categoriesById}
+            tagsById={tagsById}
             onSelect={onSelect}
           />
         )
@@ -41,12 +49,14 @@ function BoardColumn({
   label,
   todos,
   categoriesById,
+  tagsById,
   onSelect
 }: {
   status: TodoStatus
   label: string
   todos: Todo[]
   categoriesById: Map<string, Category>
+  tagsById: Map<string, Tag>
   onSelect: (id: string) => void
 }): JSX.Element {
   const { setNodeRef, isOver } = useDroppable({ id: `drop:status:${status}` })
@@ -67,6 +77,7 @@ function BoardColumn({
               key={todo.id}
               todo={todo}
               cat={cat}
+              tagsById={tagsById}
               onSelect={onSelect}
             />
           )
@@ -81,7 +92,17 @@ function BoardColumn({
   )
 }
 
-function BoardCard({ todo, cat, onSelect }: { todo: Todo, cat: Category | null, onSelect: (id: string) => void }): JSX.Element {
+function BoardCard({
+  todo,
+  cat,
+  tagsById,
+  onSelect
+}: {
+  todo: Todo
+  cat: Category | null
+  tagsById: Map<string, Tag>
+  onSelect: (id: string) => void
+}): JSX.Element {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: todo.id,
     data: { type: 'todo' }
@@ -101,6 +122,7 @@ function BoardCard({ todo, cat, onSelect }: { todo: Todo, cat: Category | null, 
       onClick={() => onSelect(todo.id)}
     >
       <div className="board-card-title">{todo.text}</div>
+      <TagChips tagIds={todo.tags} tagsById={tagsById} />
       <div className="board-card-meta">
         {cat ? (
           <>

@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import { promises as fs } from 'fs'
 import { dirname, join, extname } from 'path'
 import { resolveDataDir } from './data-dir'
-import type { Category, JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
+import type { Category, JotState, Tag, Todo, TodoStatus } from '../renderer/src/shared/types'
 import type { StorageAdapter } from './storage'
 
 type ChangeListener = (state: JotState) => void
@@ -25,7 +25,7 @@ const CATEGORY_COLORS = [
  * windows) on every change.
  */
 export class TodoStore {
-  private state: JotState = { todos: [], categories: [] }
+  private state: JotState = { todos: [], categories: [], tags: [] }
   private readonly listeners = new Set<ChangeListener>()
   private stopWatching: (() => void) | null = null
   private reloadInFlight: Promise<void> | null = null
@@ -64,6 +64,7 @@ export class TodoStore {
       description: '',
       images: [],
       categoryId,
+      tags: [],
       createdAt: Date.now(),
       completedAt: null
     }
@@ -316,6 +317,63 @@ export class TodoStore {
       newOrder.push(cat)
     }
     this.state.categories = newOrder
+    await this.persist()
+  }
+
+  async addTag(name: string, color: string, description: string): Promise<string> {
+    const tag: Tag = {
+      id: randomUUID(),
+      name: name.trim().length > 0 ? name.trim() : 'New tag',
+      color,
+      description: description.trim()
+    }
+    this.state.tags = [...this.state.tags, tag]
+    await this.persist()
+    return tag.id
+  }
+
+  async updateTag(
+    id: string,
+    patch: { name?: string; color?: string; description?: string }
+  ): Promise<void> {
+    this.state.tags = this.state.tags.map((tag) => {
+      if (tag.id !== id) {
+        return tag
+      }
+      const name = patch.name !== undefined ? patch.name.trim() : tag.name
+      return {
+        ...tag,
+        name: name.length > 0 ? name : tag.name,
+        color: patch.color !== undefined ? patch.color : tag.color,
+        description: patch.description !== undefined ? patch.description.trim() : tag.description
+      }
+    })
+    await this.persist()
+  }
+
+  /**
+   * Remove a tag definition and strip its id from every todo that carried it.
+   */
+  async removeTag(id: string): Promise<void> {
+    this.state.tags = this.state.tags.filter((tag) => tag.id !== id)
+    this.state.todos = this.state.todos.map((todo) => {
+      if (!todo.tags.includes(id)) {
+        return todo
+      }
+      return { ...todo, tags: todo.tags.filter((tagId) => tagId !== id) }
+    })
+    await this.persist()
+  }
+
+  async setTodoTags(todoId: string, tagIds: string[]): Promise<void> {
+    const known = new Set(this.state.tags.map((tag) => tag.id))
+    const cleaned = tagIds.filter((tagId) => known.has(tagId))
+    this.state.todos = this.state.todos.map((todo) => {
+      if (todo.id !== todoId) {
+        return todo
+      }
+      return { ...todo, tags: cleaned }
+    })
     await this.persist()
   }
 

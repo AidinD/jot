@@ -53,6 +53,21 @@ const jotApi = {
   reorderCategories: (orderedIds: string[]): Promise<void> => {
     return ipcRenderer.invoke('categories:reorder', orderedIds)
   },
+  addTag: (name: string, color: string, description: string): Promise<string> => {
+    return ipcRenderer.invoke('tags:add', name, color, description)
+  },
+  updateTag: (
+    id: string,
+    patch: { name?: string; color?: string; description?: string }
+  ): Promise<void> => {
+    return ipcRenderer.invoke('tags:update', id, patch)
+  },
+  removeTag: (id: string): Promise<void> => {
+    return ipcRenderer.invoke('tags:remove', id)
+  },
+  setTodoTags: (todoId: string, tagIds: string[]): Promise<void> => {
+    return ipcRenderer.invoke('todos:setTags', todoId, tagIds)
+  },
   onChanged: (callback: (state: JotState) => void): (() => void) => {
     const handler = (_event: unknown, state: JotState): void => {
       callback(state)

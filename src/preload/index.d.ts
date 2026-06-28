@@ -18,6 +18,10 @@ interface JotBridge {
   renameCategory: (id: string, name: string) => Promise<void>
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>
+  addTag: (name: string, color: string, description: string) => Promise<string>
+  updateTag: (id: string, patch: { name?: string; color?: string; description?: string }) => Promise<void>
+  removeTag: (id: string) => Promise<void>
+  setTodoTags: (todoId: string, tagIds: string[]) => Promise<void>
   onChanged: (callback: (state: JotState) => void) => () => void
 }
 

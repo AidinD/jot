@@ -213,6 +213,21 @@ function registerIpc(): void {
   ipcMain.handle('categories:reorder', (_event, orderedIds: string[]) => {
     return store.reorderCategories(orderedIds)
   })
+  ipcMain.handle('tags:add', (_event, name: string, color: string, description: string) => {
+    return store.addTag(name, color, description)
+  })
+  ipcMain.handle(
+    'tags:update',
+    (_event, id: string, patch: { name?: string; color?: string; description?: string }) => {
+      return store.updateTag(id, patch)
+    }
+  )
+  ipcMain.handle('tags:remove', (_event, id: string) => {
+    return store.removeTag(id)
+  })
+  ipcMain.handle('todos:setTags', (_event, todoId: string, tagIds: string[]) => {
+    return store.setTodoTags(todoId, tagIds)
+  })
 
   ipcMain.handle('capture:submit', async (_event, text: string, categoryId: string | null) => {
     await store.addTodo(text, categoryId)
