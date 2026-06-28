@@ -10,8 +10,25 @@ The file lives under Electron's `userData` folder:
 
 `<userData>/todos.json`
 
-On a normal Windows install this is usually under your roaming app data
-folder, but the exact path can vary with the app name and packaging setup.
+On Windows this resolves to (note the lowercase `jot`, from the app `name`):
+
+`C:\Users\<you>\AppData\Roaming\jot\todos.json`
+
+This is a plain, real filesystem path — verified reachable by external agent
+file tools and ordinary shell processes alike (no sandbox redirection). Image
+attachments live alongside it under `jot-images/<todoId>/`.
+
+## Encoding (read this before editing)
+
+The file is **UTF-8 without a BOM**. When you read or write it:
+
+- Read and write as UTF-8 explicitly. In PowerShell, `Get-Content -Encoding UTF8`
+  / write with a no-BOM UTF-8 encoder. Reading without specifying UTF-8 makes a
+  terminal render `å`/`ä`/`ö` as `Ã¥`/`Ã¤`/`Ã¶` — that is a *display* artifact,
+  NOT corruption. Check the raw bytes (`C3 A5` = `å`) before "fixing" anything.
+- Do not prepend a BOM and do not double-encode. Jot self-heals legacy
+  double-encoded text on load (`repairDoubleEncoding` in `storage.ts`), but don't
+  rely on it — write correct UTF-8 in the first place.
 
 ## File format
 

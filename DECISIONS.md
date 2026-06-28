@@ -77,6 +77,32 @@ transcript for the step-by-step; this file is only the choices worth revisiting.
   an `INTEGRATION.md` contract gives Claude/Antigravity direct read/write
   access with far less complexity than a separate protocol layer.
 
+## 2026-06-28 — Encoding self-heal + data stays in userData
+
+**`todos.json` stays in Electron's userData (`%APPDATA%\jot`); not moved to Documents.**
+- Alternatives: move to `Documents\Jot` or a Dropbox folder so external tooling
+  reaches it / to enable laptop↔PC sync.
+- Why: the move was proposed to escape a *suspected* filesystem sandbox blocking
+  an external agent (Claude) from the real file. A write-probe round-trip
+  disproved the sandbox — the agent's file tools and ordinary shell processes
+  both reach the same real `%APPDATA%\jot\todos.json`. With the premise gone,
+  moving only adds risk: `Documents` is OneDrive-redirected on this machine, and
+  putting a hot, frequently-rewritten file under OneDrive invites sync-conflict
+  copies. If cross-device sync is ever wanted, use a Dropbox path, not OneDrive.
+
+**Verify access/corruption claims with a probe before designing around them.**
+- A UTF-8 *display* artifact (`Ã¥` shown for `å` when a terminal reads the file
+  as Latin-1) was nearly mistaken for on-disk corruption. The bytes were correct
+  (`C3 A5` = `å`). Lesson: check raw bytes / read as UTF-8 before believing the
+  glyphs, and round-trip a marker through both tools before theorizing a sandbox.
+
+**`repairDoubleEncoding()` self-heals legacy double-encoded text on load (v0.2.7).**
+- A real double-encoding bug did exist: an external edit wrote å/ä/ö as their
+  UTF-8 bytes reinterpreted as Latin-1 code points. `storage.ts` now collapses
+  `0xC2/0xC3 + continuation-byte` pairs back to the intended code point during
+  normalize/migrate (todo text/description + category names), and `store.init()`
+  persists once after load so the repaired file is written back on first launch.
+
 ## 2026-06-26 — Reinstall after every release
 
 **Every new Jot release is installed locally before handoff.**
