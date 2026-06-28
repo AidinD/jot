@@ -297,10 +297,16 @@ body {
   border-radius: 8px;
   background: var(--surface);
   border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .todo-row:hover {
   background: var(--surface-hover);
+}
+
+/* Completed rows aren't clickable to open the detail panel. */
+.todo-row.static {
+  cursor: default;
 }
 
 .todo-row.overlay {
