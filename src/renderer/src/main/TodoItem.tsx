@@ -72,11 +72,21 @@ export function TodoItem({
   const rowClass = `todo-row${isDone ? ' done' : ''}`
 
   return (
-    <li ref={setNodeRef} style={style} className={rowClass}>
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={rowClass}
+      onClick={() => {
+        if (!isEditing) {
+          onSelect(todo.id)
+        }
+      }}
+    >
       {sortable ? (
         <button
           className="drag-handle"
           title="Drag to reorder or onto a list"
+          onClick={(e) => e.stopPropagation()}
           {...attributes}
           {...listeners}
         >
@@ -88,9 +98,13 @@ export function TodoItem({
       <button
         className={`status-checkbox ${todo.status}`}
         title={`Status: ${todo.status} (click to cycle)`}
-        onClick={() => cycleStatus(false)}
+        onClick={(e) => {
+          e.stopPropagation()
+          cycleStatus(false)
+        }}
         onContextMenu={(e) => {
           e.preventDefault()
+          e.stopPropagation()
           cycleStatus(true)
         }}
       />
@@ -102,23 +116,37 @@ export function TodoItem({
           ref={inputRef}
           className="todo-edit-input"
           value={draft}
+          onClick={(e) => e.stopPropagation()}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') commitEdit()
-            if (e.key === 'Escape') onStopEdit()
+            if (e.key === 'Enter') {
+              commitEdit()
+            }
+            if (e.key === 'Escape') {
+              onStopEdit()
+            }
           }}
           onBlur={commitEdit}
         />
       ) : (
         <span
           className="todo-text"
-          onClick={() => onSelect(todo.id)}
-          onDoubleClick={() => onStartEdit(todo.id)}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            onStartEdit(todo.id)
+          }}
         >
           {todo.text}
         </span>
       )}
-      <button className="remove-button" title="Delete" onClick={() => onRemove(todo.id)}>
+      <button
+        className="remove-button"
+        title="Delete"
+        onClick={(e) => {
+          e.stopPropagation()
+          onRemove(todo.id)
+        }}
+      >
         ×
       </button>
     </li>
