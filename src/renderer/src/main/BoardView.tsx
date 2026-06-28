@@ -5,6 +5,7 @@ import type { Category, Todo, TodoStatus } from '@shared/types'
 const COLUMNS: { status: TodoStatus; label: string }[] = [
   { status: 'open', label: 'Open' },
   { status: 'in-progress', label: 'In Progress' },
+  { status: 'review', label: 'Review' },
   { status: 'done', label: 'Done' }
 ]
 

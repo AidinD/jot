@@ -28,7 +28,12 @@ function repairDoubleEncoding(str: string): string {
 
 function normalizeTodo(raw: any): Todo {
   let status: TodoStatus = 'open'
-  if (raw.status === 'open' || raw.status === 'in-progress' || raw.status === 'done') {
+  if (
+    raw.status === 'open' ||
+    raw.status === 'in-progress' ||
+    raw.status === 'review' ||
+    raw.status === 'done'
+  ) {
     status = raw.status
   } else if (raw.done === true) {
     status = 'done'
