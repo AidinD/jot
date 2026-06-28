@@ -4,10 +4,11 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  pointerWithin,
   useSensor,
   useSensors
 } from '@dnd-kit/core'
-import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import type { CollisionDetection, DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Category, JotState, Tag, Todo, TodoStatus } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
@@ -57,6 +58,22 @@ function sortTodos(list: Todo[], mode: SortMode): Todo[] {
     sorted.sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status])
   }
   return sorted
+}
+
+/**
+ * Prefer whatever droppable the pointer is actually over (sidebar lists, status
+ * columns, the row under the cursor), falling back to closest-center for the
+ * gaps. Plain closestCenter measured from the dragged item's center, which in
+ * the list view stays closer to neighbouring rows than to the sidebar — so
+ * dragging a todo onto another list never registered. Pointer-first fixes both
+ * the cross-list move and the target highlight.
+ */
+const collisionDetectionStrategy: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions
+  }
+  return closestCenter(args)
 }
 
 export function App(): JSX.Element {
@@ -408,7 +425,7 @@ export function App(): JSX.Element {
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={collisionDetectionStrategy}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
