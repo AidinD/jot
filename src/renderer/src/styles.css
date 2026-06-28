@@ -12,6 +12,8 @@
   --violet: #b98cff;
   --surface-alt: #2a2c31;
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* Render native controls (the select dropdown popup, scrollbars) dark. */
+  color-scheme: dark;
 }
 
 * {
@@ -826,6 +828,11 @@ body {
 
 .sort-select:hover {
   border-color: var(--accent);
+}
+
+.sort-select option {
+  background-color: var(--surface);
+  color: var(--text);
 }
 
 .view-toggle {
