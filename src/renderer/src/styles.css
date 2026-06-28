@@ -816,8 +816,15 @@ body {
   color: var(--text-dim);
 }
 
-.sort-select {
-  padding: 5px 8px;
+.sort-menu {
+  position: relative;
+}
+
+.sort-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
@@ -826,13 +833,48 @@ body {
   cursor: pointer;
 }
 
-.sort-select:hover {
+.sort-trigger:hover {
   border-color: var(--accent);
 }
 
-.sort-select option {
-  background-color: var(--surface);
+.sort-caret {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
+.sort-options {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 120px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.sort-option {
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
   color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sort-option:hover {
+  background: var(--surface-hover);
+}
+
+.sort-option.active {
+  color: var(--accent);
 }
 
 .view-toggle {
