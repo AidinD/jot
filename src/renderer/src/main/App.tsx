@@ -16,6 +16,7 @@ import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
 import { DetailPanel } from './DetailPanel'
 import { BoardView } from './BoardView'
+import { SortMenu } from './SortMenu'
 
 const MAX_ADD_SUGGESTIONS = 6
 
@@ -352,20 +353,10 @@ export function App(): JSX.Element {
           Jot <span className="version">v{__APP_VERSION__}</span>
         </h1>
         <div className="header-actions">
-          <label className="sort-control" title="Sort the open list">
+          <div className="sort-control" title="Sort the open list">
             <span className="sort-label">Sort</span>
-            <select
-              className="sort-select"
-              value={sortMode}
-              onChange={(e) => setSortMode(e.target.value as SortMode)}
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+            <SortMenu value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} />
+          </div>
           <div className="view-toggle">
             <button
               className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
