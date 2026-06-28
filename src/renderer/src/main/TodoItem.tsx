@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import type { Category, Todo, TodoStatus } from '@shared/types'
+import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
+import { TagChips } from './TagChips'
 
 const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
 
 interface TodoItemProps {
   todo: Todo
   category: Category | null
+  tagsById: Map<string, Tag>
   showCategoryTag: boolean
   editingId: string | null
   sortable: boolean
@@ -21,6 +23,7 @@ interface TodoItemProps {
 export function TodoItem({
   todo,
   category,
+  tagsById,
   showCategoryTag,
   editingId,
   sortable,
@@ -139,6 +142,7 @@ export function TodoItem({
           {todo.text}
         </span>
       )}
+      {!isEditing ? <TagChips tagIds={todo.tags} tagsById={tagsById} /> : null}
       <button
         className="remove-button"
         title="Delete"

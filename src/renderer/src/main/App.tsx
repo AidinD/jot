@@ -9,7 +9,7 @@ import {
 } from '@dnd-kit/core'
 import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import type { Category, JotState, Todo, TodoStatus } from '@shared/types'
+import type { Category, JotState, Tag, Todo, TodoStatus } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
@@ -18,10 +18,11 @@ import { DetailPanel } from './DetailPanel'
 import { BoardView } from './BoardView'
 import { SortMenu } from './SortMenu'
 import { ConfirmModal } from './ConfirmModal'
+import { TagManager } from './TagManager'
 
 const MAX_ADD_SUGGESTIONS = 6
 
-const EMPTY_STATE: JotState = { todos: [], categories: [] }
+const EMPTY_STATE: JotState = { todos: [], categories: [], tags: [] }
 
 type SortMode = 'manual' | 'status' | 'date'
 
@@ -75,6 +76,7 @@ export function App(): JSX.Element {
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(false)
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState<string | null>(null)
+  const [tagManagerOpen, setTagManagerOpen] = useState(false)
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -121,6 +123,14 @@ export function App(): JSX.Element {
     }
     return map
   }, [state.categories])
+
+  const tagsById = useMemo(() => {
+    const map = new Map<string, Tag>()
+    for (const tag of state.tags) {
+      map.set(tag.id, tag)
+    }
+    return map
+  }, [state.tags])
 
   useEffect(() => {
     if (filter === 'all' || filter === 'uncategorized') {
@@ -506,6 +516,7 @@ export function App(): JSX.Element {
               <BoardView
                 todos={visible}
                 categoriesById={categoriesById}
+                tagsById={tagsById}
                 onSelect={setSelectedTodoId}
               />
             ) : (
@@ -518,6 +529,7 @@ export function App(): JSX.Element {
                           key={todo.id}
                           todo={todo}
                           category={categoryFor(todo)}
+                          tagsById={tagsById}
                           showCategoryTag={filter === 'all'}
                           editingId={editingTodoId}
                           sortable={sortMode === 'manual'}
@@ -607,6 +619,8 @@ export function App(): JSX.Element {
             <DetailPanel
               todo={selectedTodo}
               category={categoryFor(selectedTodo)}
+              tags={state.tags}
+              onManageTags={() => setTagManagerOpen(true)}
               onClose={() => setSelectedTodoId(null)}
             />
           ) : null}
@@ -637,6 +651,10 @@ export function App(): JSX.Element {
           }}
           onCancel={() => setPendingDeleteCatId(null)}
         />
+      ) : null}
+
+      {tagManagerOpen ? (
+        <TagManager tags={state.tags} onClose={() => setTagManagerOpen(false)} />
       ) : null}
     </div>
   )

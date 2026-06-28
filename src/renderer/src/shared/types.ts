@@ -7,6 +7,7 @@ export interface Todo {
   description: string
   images: string[]
   categoryId: string | null
+  tags: string[]
   createdAt: number
   completedAt: number | null
 }
@@ -19,12 +20,24 @@ export interface Category {
 }
 
 /**
+ * A reusable label that can be applied to many todos. `description` is the
+ * hover text shown on the tag chip.
+ */
+export interface Tag {
+  id: string
+  name: string
+  color: string
+  description: string
+}
+
+/**
  * The full persisted/broadcast application state. Order within `todos` is the
  * display order; reordering mutates this array.
  */
 export interface JotState {
   todos: Todo[]
   categories: Category[]
+  tags: Tag[]
 }
 
 export type ViewMode = 'list' | 'board'
@@ -50,6 +63,10 @@ export interface JotApi {
   renameCategory: (id: string, name: string) => Promise<void>
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>
+  addTag: (name: string, color: string, description: string) => Promise<string>
+  updateTag: (id: string, patch: { name?: string; color?: string; description?: string }) => Promise<void>
+  removeTag: (id: string) => Promise<void>
+  setTodoTags: (todoId: string, tagIds: string[]) => Promise<void>
   addImage: (todoId: string) => Promise<void>
   addImageData: (todoId: string, bytes: Uint8Array, ext: string) => Promise<void>
   removeImage: (todoId: string, imagePath: string) => Promise<void>

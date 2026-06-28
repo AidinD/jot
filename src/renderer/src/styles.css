@@ -1025,6 +1025,176 @@ body {
   }
 }
 
+/* --- Tags --- */
+
+/* Read-only chips shown on todos (list rows + board cards). */
+.tag-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.tag-chip.mini {
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #1b1c1f;
+  white-space: nowrap;
+}
+
+.todo-row .tag-chips {
+  margin-left: 2px;
+}
+
+.board-card .tag-chips {
+  margin: 4px 0 2px;
+}
+
+/* Toggle chips in the detail panel tag picker. */
+.detail-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.detail-manage-tags {
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.detail-manage-tags:hover {
+  text-decoration: underline;
+}
+
+.detail-tag-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.tag-chip.active {
+  color: #1b1c1f;
+}
+
+.detail-tag-empty {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* Tag manager modal */
+.tag-manager {
+  width: min(560px, calc(100vw - 48px));
+}
+
+.tag-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-bottom: 14px;
+}
+
+.tag-manager-row,
+.tag-manager-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tag-manager-add {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.tag-swatches {
+  display: inline-flex;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.tag-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tag-swatch.active {
+  border-color: var(--text);
+}
+
+.tag-name-input {
+  width: 110px;
+  flex-shrink: 0;
+}
+
+.tag-desc-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.tag-name-input,
+.tag-desc-input {
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.tag-delete {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0 4px;
+}
+
+.tag-delete:hover {
+  color: var(--danger);
+}
+
+.tag-add-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #0c1322;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tag-manager-empty {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0;
+}
+
 @keyframes toastIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }

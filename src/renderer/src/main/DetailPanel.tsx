@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Category, Todo, TodoStatus } from '@shared/types'
+import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 
 const STATUS_OPTIONS: { value: TodoStatus; label: string }[] = [
   { value: 'open', label: 'Open' },
@@ -18,10 +18,18 @@ const MIME_TO_EXT: Record<string, string> = {
 interface DetailPanelProps {
   todo: Todo
   category: Category | null
+  tags: Tag[]
+  onManageTags: () => void
   onClose: () => void
 }
 
-export function DetailPanel({ todo, category, onClose }: DetailPanelProps): JSX.Element {
+export function DetailPanel({
+  todo,
+  category,
+  tags,
+  onManageTags,
+  onClose
+}: DetailPanelProps): JSX.Element {
   const [title, setTitle] = useState(todo.text)
   const [description, setDescription] = useState(todo.description)
   const [imagePaths, setImagePaths] = useState<Map<string, string>>(new Map())
@@ -106,6 +114,13 @@ export function DetailPanel({ todo, category, onClose }: DetailPanelProps): JSX.
     window.jot.setStatus(todo.id, status)
   }
 
+  function toggleTag(tagId: string): void {
+    const next = todo.tags.includes(tagId)
+      ? todo.tags.filter((id) => id !== tagId)
+      : [...todo.tags, tagId]
+    window.jot.setTodoTags(todo.id, next)
+  }
+
   function handleAddImage(): void {
     window.jot.addImage(todo.id)
   }
@@ -154,6 +169,37 @@ export function DetailPanel({ todo, category, onClose }: DetailPanelProps): JSX.
             {opt.label}
           </button>
         ))}
+      </div>
+
+      <div className="detail-section-head">
+        <span className="detail-section-label">Tags</span>
+        <button className="detail-manage-tags" onClick={onManageTags}>
+          Manage
+        </button>
+      </div>
+      <div className="detail-tag-picker">
+        {tags.map((tag) => {
+          const active = todo.tags.includes(tag.id)
+          return (
+            <button
+              key={tag.id}
+              type="button"
+              className={`tag-chip${active ? ' active' : ''}`}
+              style={
+                active
+                  ? { background: tag.color, borderColor: tag.color }
+                  : { borderColor: tag.color, color: tag.color }
+              }
+              title={tag.description.length > 0 ? tag.description : tag.name}
+              onClick={() => toggleTag(tag.id)}
+            >
+              {tag.name}
+            </button>
+          )
+        })}
+        {tags.length === 0 ? (
+          <span className="detail-tag-empty">No tags yet — add some via Manage.</span>
+        ) : null}
       </div>
 
       <span className="detail-section-label">Description</span>

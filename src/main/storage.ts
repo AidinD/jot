@@ -1,7 +1,16 @@
 import { promises as fs, watch as watchFs } from 'fs'
 import { basename, dirname, join } from 'path'
 import { resolveDataDir } from './data-dir'
-import type { JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
+import type { JotState, Tag, Todo, TodoStatus } from '../renderer/src/shared/types'
+
+// Seeded once, the first time a pre-tags file is loaded (when `tags` is absent).
+// Fixed ids so re-seeding never duplicates. The user can edit/delete/add freely.
+const DEFAULT_TAGS: Tag[] = [
+  { id: 'tag-blocked', name: 'Blocked', color: '#ff6b6b', description: 'Blocked by a dependency or external thing' },
+  { id: 'tag-waiting', name: 'Waiting', color: '#ffb054', description: 'Waiting on someone or something' },
+  { id: 'tag-urgent', name: 'Urgent', color: '#ff8c42', description: 'Needs attention soon' },
+  { id: 'tag-idea', name: 'Idea', color: '#b98cff', description: 'Rough idea, not committed yet' }
+]
 
 /**
  * Storage seam. v1 ships a local JSON implementation, but the rest of the
@@ -46,8 +55,18 @@ function normalizeTodo(raw: any): Todo {
     description: repairDoubleEncoding(String(raw.description ?? '')),
     images: Array.isArray(raw.images) ? raw.images : [],
     categoryId: raw.categoryId ?? null,
+    tags: Array.isArray(raw.tags) ? raw.tags.map((t: unknown) => String(t)) : [],
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
     completedAt: typeof raw.completedAt === 'number' ? raw.completedAt : null
+  }
+}
+
+function normalizeTag(raw: any): Tag {
+  return {
+    id: String(raw.id),
+    name: repairDoubleEncoding(String(raw.name ?? '')),
+    color: String(raw.color ?? '#9a9da3'),
+    description: repairDoubleEncoding(String(raw.description ?? ''))
   }
 }
 
@@ -59,7 +78,8 @@ function migrate(parsed: unknown): JotState {
   if (Array.isArray(parsed)) {
     return {
       todos: parsed.map(normalizeTodo),
-      categories: []
+      categories: [],
+      tags: DEFAULT_TAGS
     }
   }
   if (parsed !== null && typeof parsed === 'object') {
@@ -68,10 +88,13 @@ function migrate(parsed: unknown): JotState {
       todos: Array.isArray(state.todos) ? state.todos.map(normalizeTodo) : [],
       categories: Array.isArray(state.categories)
         ? state.categories.map((c) => ({ ...c, name: repairDoubleEncoding(String(c.name ?? '')) }))
-        : []
+        : [],
+      // Absent `tags` means a pre-tags file → seed defaults. An existing array
+      // (even empty) is respected, so deleting all tags sticks.
+      tags: Array.isArray(state.tags) ? state.tags.map(normalizeTag) : DEFAULT_TAGS
     }
   }
-  return { todos: [], categories: [] }
+  return { todos: [], categories: [], tags: DEFAULT_TAGS }
 }
 
 export class LocalJsonStorage implements StorageAdapter {
@@ -88,7 +111,7 @@ export class LocalJsonStorage implements StorageAdapter {
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
       if (code === 'ENOENT') {
-        return { todos: [], categories: [] }
+        return { todos: [], categories: [], tags: DEFAULT_TAGS }
       }
       throw error
     }
