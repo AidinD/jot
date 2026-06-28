@@ -1,6 +1,6 @@
 import { promises as fs, watch as watchFs } from 'fs'
 import { basename, dirname, join } from 'path'
-import { app } from 'electron'
+import { resolveDataDir } from './data-dir'
 import type { JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
 
 /**
@@ -73,7 +73,7 @@ export class LocalJsonStorage implements StorageAdapter {
   private readonly filePath: string
 
   constructor(filePath?: string) {
-    this.filePath = filePath ?? join(app.getPath('userData'), 'todos.json')
+    this.filePath = filePath ?? join(resolveDataDir(), 'todos.json')
   }
 
   async load(): Promise<JotState> {

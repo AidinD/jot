@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
-import { app } from 'electron'
 import { promises as fs } from 'fs'
 import { dirname, join, extname } from 'path'
+import { resolveDataDir } from './data-dir'
 import type { Category, JotState, Todo, TodoStatus } from '../renderer/src/shared/types'
 import type { StorageAdapter } from './storage'
 
@@ -108,7 +108,7 @@ export class TodoStore {
     const ext = extname(sourcePath)
     const fileName = `${randomUUID()}${ext}`
     const relativePath = join('jot-images', todoId, fileName)
-    const absolutePath = join(app.getPath('userData'), relativePath)
+    const absolutePath = join(resolveDataDir(), relativePath)
 
     await fs.mkdir(dirname(absolutePath), { recursive: true })
     await fs.copyFile(sourcePath, absolutePath)
@@ -138,7 +138,7 @@ export class TodoStore {
     })
     await this.persist()
 
-    const absolutePath = join(app.getPath('userData'), imagePath)
+    const absolutePath = join(resolveDataDir(), imagePath)
     try {
       await fs.unlink(absolutePath)
     } catch (e) {

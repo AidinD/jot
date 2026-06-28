@@ -4,6 +4,7 @@ import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray, d
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { LocalJsonStorage } from './storage'
 import { TodoStore } from './store'
+import { resolveDataDir, migrateLegacyData } from './data-dir'
 import { loadPrefs, savePrefs } from './prefs'
 import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
 import type { TodoStatus } from '../renderer/src/shared/types'
@@ -176,7 +177,7 @@ function registerIpc(): void {
     return store.removeImage(todoId, imagePath)
   })
   ipcMain.handle('images:resolve', (_event, relativePath: string) => {
-    return join(app.getPath('userData'), relativePath)
+    return join(resolveDataDir(), relativePath)
   })
   ipcMain.handle('todos:remove', (_event, id: string) => {
     return store.removeTodo(id)
@@ -223,6 +224,8 @@ app.whenReady().then(async () => {
     electronApp.setAppUserModelId('io.github.aidind.jot')
 
     logStartup('loading store')
+    migrateLegacyData()
+    logStartup(`data dir ${resolveDataDir()}`)
     await store.init()
     logStartup('store loaded')
     store.subscribe(() => {
