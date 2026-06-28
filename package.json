@@ -6,6 +6,10 @@
   "author": "Aidin",
   "license": "MIT",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AidinD/jot.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "electron-vite dev",
