@@ -17,6 +17,7 @@ import { TodoCard, TodoItem } from './TodoItem'
 import { DetailPanel } from './DetailPanel'
 import { BoardView } from './BoardView'
 import { SortMenu } from './SortMenu'
+import { ConfirmModal } from './ConfirmModal'
 
 const MAX_ADD_SUGGESTIONS = 6
 
@@ -73,6 +74,7 @@ export function App(): JSX.Element {
   )
   const [isCompletedCollapsed, setIsCompletedCollapsed] = useState<boolean>(false)
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
+  const [pendingDeleteCatId, setPendingDeleteCatId] = useState<string | null>(null)
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -207,6 +209,20 @@ export function App(): JSX.Element {
     if (selectedTodoId === null) return null
     return state.todos.find((t) => t.id === selectedTodoId) ?? null
   }, [selectedTodoId, state.todos])
+
+  const pendingDeleteCat = useMemo(() => {
+    if (pendingDeleteCatId === null) {
+      return null
+    }
+    return state.categories.find((c) => c.id === pendingDeleteCatId) ?? null
+  }, [pendingDeleteCatId, state.categories])
+
+  const pendingDeleteCount = useMemo(() => {
+    if (pendingDeleteCatId === null) {
+      return 0
+    }
+    return state.todos.filter((t) => t.categoryId === pendingDeleteCatId).length
+  }, [pendingDeleteCatId, state.todos])
 
   function categoryFor(todo: Todo): Category | null {
     if (todo.categoryId === null) {
@@ -399,7 +415,7 @@ export function App(): JSX.Element {
               window.jot.renameCategory(id, name)
             }}
             onRemoveCategory={(id) => {
-              window.jot.removeCategory(id)
+              setPendingDeleteCatId(id)
             }}
             editingId={editingId}
             setEditingId={setEditingId}
@@ -604,6 +620,24 @@ export function App(): JSX.Element {
 
         {toast !== null ? <div className="copy-toast">{toast}</div> : null}
       </DndContext>
+
+      {pendingDeleteCat !== null ? (
+        <ConfirmModal
+          title="Delete list"
+          message={
+            pendingDeleteCount > 0
+              ? `Delete "${pendingDeleteCat.name}" and its ${pendingDeleteCount} task${pendingDeleteCount === 1 ? '' : 's'}? This can't be undone.`
+              : `Delete "${pendingDeleteCat.name}"? This can't be undone.`
+          }
+          confirmLabel="Delete"
+          danger
+          onConfirm={() => {
+            window.jot.removeCategory(pendingDeleteCat.id)
+            setPendingDeleteCatId(null)
+          }}
+          onCancel={() => setPendingDeleteCatId(null)}
+        />
+      ) : null}
     </div>
   )
 }
