@@ -6,6 +6,7 @@ interface JotBridge {
   setStatus: (id: string, status: TodoStatus) => Promise<void>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   addImage: (todoId: string) => Promise<void>
+  addImageData: (todoId: string, bytes: Uint8Array, ext: string) => Promise<void>
   removeImage: (todoId: string, imagePath: string) => Promise<void>
   getImagePath: (relativePath: string) => Promise<string>
   removeTodo: (id: string) => Promise<void>

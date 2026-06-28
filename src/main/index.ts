@@ -173,6 +173,12 @@ function registerIpc(): void {
       await store.addImage(todoId, result.filePaths[0])
     }
   })
+  ipcMain.handle(
+    'todos:addImageData',
+    (_event, todoId: string, bytes: Uint8Array, ext: string) => {
+      return store.addImageFromBytes(todoId, bytes, ext)
+    }
+  )
   ipcMain.handle('todos:removeImage', (_event, todoId: string, imagePath: string) => {
     return store.removeImage(todoId, imagePath)
   })

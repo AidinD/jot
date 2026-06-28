@@ -17,6 +17,9 @@ const jotApi = {
   addImage: (todoId: string): Promise<void> => {
     return ipcRenderer.invoke('todos:addImage', todoId)
   },
+  addImageData: (todoId: string, bytes: Uint8Array, ext: string): Promise<void> => {
+    return ipcRenderer.invoke('todos:addImageData', todoId, bytes, ext)
+  },
   removeImage: (todoId: string, imagePath: string): Promise<void> => {
     return ipcRenderer.invoke('todos:removeImage', todoId, imagePath)
   },

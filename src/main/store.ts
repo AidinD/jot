@@ -105,13 +105,33 @@ export class TodoStore {
   }
 
   async addImage(todoId: string, sourcePath: string): Promise<string> {
-    const ext = extname(sourcePath)
+    return this.storeImage(todoId, extname(sourcePath), (absolutePath) => {
+      return fs.copyFile(sourcePath, absolutePath)
+    })
+  }
+
+  async addImageFromBytes(todoId: string, bytes: Uint8Array, ext: string): Promise<string> {
+    return this.storeImage(todoId, ext, (absolutePath) => {
+      return fs.writeFile(absolutePath, Buffer.from(bytes))
+    })
+  }
+
+  /**
+   * Shared image-attach path: pick a unique filename under jot-images/<todoId>/,
+   * let the caller write the bytes (copy a file, or dump pasted bytes), then
+   * record the relative path on the todo and persist.
+   */
+  private async storeImage(
+    todoId: string,
+    ext: string,
+    writeFile: (absolutePath: string) => Promise<void>
+  ): Promise<string> {
     const fileName = `${randomUUID()}${ext}`
     const relativePath = join('jot-images', todoId, fileName)
     const absolutePath = join(resolveDataDir(), relativePath)
 
     await fs.mkdir(dirname(absolutePath), { recursive: true })
-    await fs.copyFile(sourcePath, absolutePath)
+    await writeFile(absolutePath)
 
     this.state.todos = this.state.todos.map((todo) => {
       if (todo.id !== todoId) {
