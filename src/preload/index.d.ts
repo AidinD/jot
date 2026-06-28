@@ -13,6 +13,7 @@ interface JotBridge {
   setTodoCategory: (id: string, categoryId: string | null) => Promise<void>
   reorderTodos: (orderedVisibleIds: string[]) => Promise<void>
   clearCompleted: () => Promise<void>
+  archiveCompleted: () => Promise<number>
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   removeCategory: (id: string) => Promise<void>

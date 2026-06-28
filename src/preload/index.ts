@@ -38,6 +38,9 @@ const jotApi = {
   clearCompleted: (): Promise<void> => {
     return ipcRenderer.invoke('todos:clearCompleted')
   },
+  archiveCompleted: (): Promise<number> => {
+    return ipcRenderer.invoke('todos:archiveCompleted')
+  },
   addCategory: (name: string): Promise<string> => {
     return ipcRenderer.invoke('categories:add', name)
   },

@@ -526,15 +526,31 @@ export function App(): JSX.Element {
                         <span style={{ transform: isCompletedCollapsed ? 'rotate(-90deg)' : 'none', transition: 'transform 150ms ease', fontSize: 10 }}>▼</span>
                         Completed ({done.length})
                       </span>
-                      <button
-                        className="link-button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          window.jot.clearCompleted()
-                        }}
-                      >
-                        Clear
-                      </button>
+                      <span style={{ display: 'flex', gap: 12 }}>
+                        <button
+                          className="link-button"
+                          title="Move completed to archive.json (keeps history)"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.jot.archiveCompleted().then((count) => {
+                              if (count > 0) {
+                                setToast(`Archived ${count}`)
+                              }
+                            })
+                          }}
+                        >
+                          Archive
+                        </button>
+                        <button
+                          className="link-button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.jot.clearCompleted()
+                          }}
+                        >
+                          Clear
+                        </button>
+                      </span>
                     </div>
                     {!isCompletedCollapsed && (
                       <ul className="todo-list">

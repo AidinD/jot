@@ -197,6 +197,9 @@ function registerIpc(): void {
   ipcMain.handle('todos:clearCompleted', () => {
     return store.clearCompleted()
   })
+  ipcMain.handle('todos:archiveCompleted', () => {
+    return store.archiveCompleted()
+  })
 
   ipcMain.handle('categories:add', (_event, name: string) => {
     return store.addCategory(name)
