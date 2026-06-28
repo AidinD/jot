@@ -35,6 +35,7 @@ export class TodoStore {
 
   async init(): Promise<void> {
     this.state = await this.storage.load()
+    await this.storage.save(this.state)
     if (this.storage.watch !== undefined) {
       try {
         this.stopWatching = this.storage.watch(() => {
