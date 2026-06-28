@@ -33,11 +33,13 @@ export function TodoItem({
   onStartEdit,
   onStopEdit
 }: TodoItemProps): JSX.Element {
+  const isEditing = editingId === todo.id
+  // The whole row is the drag target (grabbable everywhere), so disable drag
+  // while editing — otherwise selecting text in the edit input would drag.
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: todo.id, disabled: !sortable })
+    useSortable({ id: todo.id, disabled: !sortable || isEditing })
   const [draft, setDraft] = useState(todo.text)
   const inputRef = useRef<HTMLInputElement>(null)
-  const isEditing = editingId === todo.id
   const isDone = todo.status === 'done'
 
   useEffect(() => {
@@ -78,23 +80,19 @@ export function TodoItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={rowClass}
+      className={`${rowClass}${sortable && !isEditing ? ' draggable' : ''}`}
       onClick={() => {
         if (!isEditing) {
           onSelect(todo.id)
         }
       }}
+      {...attributes}
+      {...listeners}
     >
       {sortable ? (
-        <button
-          className="drag-handle"
-          title="Drag to reorder or onto a list"
-          onClick={(e) => e.stopPropagation()}
-          {...attributes}
-          {...listeners}
-        >
+        <span className="drag-handle" title="Drag to reorder or onto a list" aria-hidden="true">
           ⠿
-        </button>
+        </span>
       ) : (
         <span className="drag-handle placeholder" aria-hidden="true" />
       )}

@@ -312,6 +312,15 @@ body {
   cursor: default;
 }
 
+/* The whole row is the drag target (grabbable everywhere). */
+.todo-row.draggable {
+  cursor: grab;
+}
+
+.todo-row.draggable:active {
+  cursor: grabbing;
+}
+
 .todo-row.overlay {
   background: var(--surface-hover);
   border-color: var(--accent);
