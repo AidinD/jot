@@ -10,13 +10,29 @@ The file lives under Electron's `userData` folder:
 
 `<userData>/todos.json`
 
-On Windows this resolves to (note the lowercase `jot`, from the app `name`):
+On Windows the default resolves to (note the lowercase `jot`, from the app
+`name`):
 
 `C:\Users\<you>\AppData\Roaming\jot\todos.json`
 
-This is a plain, real filesystem path — verified reachable by external agent
-file tools and ordinary shell processes alike (no sandbox redirection). Image
-attachments live alongside it under `jot-images/<todoId>/`.
+Image attachments live alongside it under `jot-images/<todoId>/`.
+
+### Relocating with `JOT_DATA_DIR`
+
+Set the `JOT_DATA_DIR` environment variable to store data somewhere other than
+the default. Jot then keeps `todos.json` and `jot-images/` under that directory,
+and on first launch migrates the existing data over once (never overwriting a
+file already there). This is per-machine configuration — nothing is hardcoded in
+the app, so distributed copies stay portable.
+
+Two reasons to use it:
+
+- **Cross-device sync** — point it at a synced folder (Dropbox, etc.).
+- **External agent access** — some packaged/sandboxed assistants have their
+  writes to `%APPDATA%` silently redirected into a private per-package overlay,
+  so edits never reach the app's real file. Pointing `JOT_DATA_DIR` at a plain,
+  non-virtualized path (e.g. a folder on a data drive) lets both the app and the
+  external tool read and write the exact same file.
 
 ## Encoding (read this before editing)
 
