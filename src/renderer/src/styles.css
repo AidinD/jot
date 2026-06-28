@@ -636,6 +636,11 @@ body {
   color: var(--accent);
 }
 
+.detail-add-image-hint {
+  opacity: 0.55;
+  font-size: 11px;
+}
+
 .detail-meta {
   font-size: 11px;
   color: var(--text-dim);

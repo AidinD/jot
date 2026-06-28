@@ -7,6 +7,13 @@ const STATUS_OPTIONS: { value: TodoStatus; label: string }[] = [
   { value: 'done', label: 'Done' }
 ]
 
+const MIME_TO_EXT: Record<string, string> = {
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/gif': '.gif',
+  'image/webp': '.webp'
+}
+
 interface DetailPanelProps {
   todo: Todo
   category: Category | null
@@ -47,6 +54,39 @@ export function DetailPanel({ todo, category, onClose }: DetailPanelProps): JSX.
     })
     return () => { active = false }
   }, [todo.images])
+
+  // Paste an image from the clipboard (Ctrl+V) onto the open todo. Only handles
+  // image data — text pastes fall through untouched so the title/description
+  // inputs keep working normally.
+  useEffect(() => {
+    const todoId = todo.id
+
+    function handlePaste(event: ClipboardEvent): void {
+      const items = event.clipboardData?.items
+      if (items === undefined) {
+        return
+      }
+      for (const item of items) {
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const file = item.getAsFile()
+          if (file === null) {
+            continue
+          }
+          event.preventDefault()
+          const ext = MIME_TO_EXT[file.type] ?? '.png'
+          file.arrayBuffer().then((buffer) => {
+            void window.jot.addImageData(todoId, new Uint8Array(buffer), ext)
+          })
+          return
+        }
+      }
+    }
+
+    document.addEventListener('paste', handlePaste)
+    return () => {
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [todo.id])
 
   function saveTitle(): void {
     const trimmed = title.trim()
@@ -143,7 +183,7 @@ export function DetailPanel({ todo, category, onClose }: DetailPanelProps): JSX.
         })}
       </div>
       <button className="detail-add-image" onClick={handleAddImage}>
-        + Add image
+        + Add image <span className="detail-add-image-hint">or paste</span>
       </button>
 
       <div className="detail-meta">
