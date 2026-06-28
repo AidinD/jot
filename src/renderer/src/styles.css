@@ -794,13 +794,13 @@ body {
 }
 
 .icon-btn {
-  padding: 5px 8px;
-  border-radius: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-dim);
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   transition: all 150ms ease;
 }
 
