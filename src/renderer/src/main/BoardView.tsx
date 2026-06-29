@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
 import { TagChips } from './TagChips'
+import { PriorityBand } from './PriorityBand'
 
 /** Group todos by priority, ascending (lower number first). */
 function groupByPriority(todos: Todo[]): { priority: number; todos: Todo[] }[] {
@@ -101,10 +102,10 @@ function BoardColumn({
         {showBands && priorityBands !== null
           ? priorityBands.map((band) => {
               return (
-                <div key={band.priority} className="board-prio-band">
+                <PriorityBand key={band.priority} priority={band.priority} className="board-prio-band">
                   <div className="priority-divider">{priorityLabel(band.priority)}</div>
                   {band.todos.map((todo) => renderCard(todo))}
-                </div>
+                </PriorityBand>
               )
             })
           : todos.map((todo) => renderCard(todo))}
