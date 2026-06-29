@@ -32,6 +32,7 @@ export function DetailPanel({
 }: DetailPanelProps): JSX.Element {
   const [title, setTitle] = useState(todo.text)
   const [description, setDescription] = useState(todo.description)
+  const [priorityDraft, setPriorityDraft] = useState(String(todo.priority))
   const [imagePaths, setImagePaths] = useState<Map<string, string>>(new Map())
   const descRef = useRef<HTMLTextAreaElement>(null)
   const prevIdRef = useRef(todo.id)
@@ -41,9 +42,10 @@ export function DetailPanel({
     if (prevIdRef.current !== todo.id) {
       setTitle(todo.text)
       setDescription(todo.description)
+      setPriorityDraft(String(todo.priority))
       prevIdRef.current = todo.id
     }
-  }, [todo.id, todo.text, todo.description])
+  }, [todo.id, todo.text, todo.description, todo.priority])
 
   // Resolve image paths
   useEffect(() => {
@@ -121,6 +123,19 @@ export function DetailPanel({
     window.jot.setTodoTags(todo.id, next)
   }
 
+  function savePriority(value: string): void {
+    const parsed = parseInt(value, 10)
+    const next = Number.isFinite(parsed) ? parsed : 0
+    setPriorityDraft(String(next))
+    if (next !== todo.priority) {
+      window.jot.setTodoPriority(todo.id, next)
+    }
+  }
+
+  function stepPriority(delta: number): void {
+    savePriority(String(todo.priority + delta))
+  }
+
   function handleAddImage(): void {
     window.jot.addImage(todo.id)
   }
@@ -169,6 +184,37 @@ export function DetailPanel({
             {opt.label}
           </button>
         ))}
+      </div>
+
+      <span className="detail-section-label">Priority</span>
+      <div className="detail-prio-row">
+        <button
+          className="prio-step"
+          onClick={() => stepPriority(-1)}
+          title="More important (lower number)"
+        >
+          −
+        </button>
+        <input
+          className="detail-prio-input"
+          type="number"
+          value={priorityDraft}
+          onChange={(e) => setPriorityDraft(e.target.value)}
+          onBlur={() => savePriority(priorityDraft)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.currentTarget.blur()
+            }
+          }}
+        />
+        <button
+          className="prio-step"
+          onClick={() => stepPriority(1)}
+          title="Less important (higher number)"
+        >
+          +
+        </button>
+        <span className="detail-prio-hint">0 = none · lower sorts higher</span>
       </div>
 
       <div className="detail-section-head">
