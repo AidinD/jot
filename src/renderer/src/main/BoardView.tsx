@@ -148,6 +148,16 @@ function BoardCard({
       className={`board-card${isDragging ? ' dragging' : ''}`}
       onClick={() => onSelect(todo.id)}
     >
+      <button
+        className="board-card-remove"
+        title="Delete"
+        onClick={(e) => {
+          e.stopPropagation()
+          window.jot.removeTodo(todo.id)
+        }}
+      >
+        ×
+      </button>
       <div className="board-card-title">{todo.text}</div>
       {todo.priority !== 0 ? (
         <span className="prio-badge" title={`Priority ${todo.priority}`}>
