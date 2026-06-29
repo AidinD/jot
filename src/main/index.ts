@@ -155,11 +155,17 @@ function registerIpc(): void {
   ipcMain.handle('state:get', () => {
     return store.getState()
   })
-  ipcMain.handle('todos:add', (_event, text: string, categoryId: string | null) => {
-    return store.addTodo(text, categoryId)
-  })
+  ipcMain.handle(
+    'todos:add',
+    (_event, text: string, categoryId: string | null, priority?: number) => {
+      return store.addTodo(text, categoryId, priority)
+    }
+  )
   ipcMain.handle('todos:setStatus', (_event, id: string, status: TodoStatus) => {
     return store.setStatus(id, status)
+  })
+  ipcMain.handle('todos:setPriority', (_event, id: string, priority: number) => {
+    return store.setTodoPriority(id, priority)
   })
   ipcMain.handle('todos:update', (_event, id: string, patch: { text?: string; description?: string }) => {
     return store.updateTodo(id, patch)
@@ -229,12 +235,15 @@ function registerIpc(): void {
     return store.setTodoTags(todoId, tagIds)
   })
 
-  ipcMain.handle('capture:submit', async (_event, text: string, categoryId: string | null) => {
-    await store.addTodo(text, categoryId)
-    if (captureWindow !== null) {
-      captureWindow.hide()
+  ipcMain.handle(
+    'capture:submit',
+    async (_event, text: string, categoryId: string | null, priority?: number) => {
+      await store.addTodo(text, categoryId, priority)
+      if (captureWindow !== null) {
+        captureWindow.hide()
+      }
     }
-  })
+  )
   ipcMain.on('capture:close', () => {
     if (captureWindow !== null) {
       captureWindow.hide()

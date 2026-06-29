@@ -8,6 +8,7 @@ export interface Todo {
   images: string[]
   categoryId: string | null
   tags: string[]
+  priority: number
   createdAt: number
   completedAt: number | null
 }
@@ -51,8 +52,9 @@ export type ViewMode = 'list' | 'board'
  */
 export interface JotApi {
   getState: () => Promise<JotState>
-  addTodo: (text: string, categoryId: string | null) => Promise<void>
+  addTodo: (text: string, categoryId: string | null, priority?: number) => Promise<void>
   setStatus: (id: string, status: TodoStatus) => Promise<void>
+  setTodoPriority: (id: string, priority: number) => Promise<void>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   removeTodo: (id: string) => Promise<void>
   setTodoCategory: (id: string, categoryId: string | null) => Promise<void>
@@ -78,6 +80,6 @@ export interface JotApi {
  * Capture-window commands. The popover only submits a line and dismisses.
  */
 export interface CaptureApi {
-  submit: (text: string, categoryId: string | null) => Promise<void>
+  submit: (text: string, categoryId: string | null, priority?: number) => Promise<void>
   close: () => void
 }

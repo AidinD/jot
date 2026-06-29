@@ -1204,6 +1204,87 @@ body {
   margin: 0;
 }
 
+/* --- Priority --- */
+
+.priority-group + .priority-group {
+  margin-top: 4px;
+}
+
+.priority-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  padding: 8px 2px 4px;
+}
+
+.priority-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.board-prio-band + .board-prio-band {
+  margin-top: 6px;
+}
+
+.board-prio-band .priority-divider {
+  padding: 4px 2px 2px;
+}
+
+.prio-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.detail-prio-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prio-step {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.prio-step:hover {
+  border-color: var(--accent);
+}
+
+.detail-prio-input {
+  width: 56px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  text-align: center;
+}
+
+.detail-prio-hint {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
 @keyframes toastIn {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }

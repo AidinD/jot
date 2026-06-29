@@ -12,6 +12,7 @@ import type { CollisionDetection, DragEndEvent, DragStartEvent } from '@dnd-kit/
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Category, JotState, Tag, Todo, TodoStatus } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
+import { parsePriority, priorityLabel } from '@shared/priority'
 import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
@@ -174,9 +175,30 @@ export function App(): JSX.Element {
     return visible.filter((todo) => todo.status !== 'done')
   }, [visible])
 
-  const displayOpen = useMemo(() => {
-    return sortTodos(open, sortMode)
+  // Open todos grouped by priority (ascending — lower number sits on top), each
+  // group sorted by the active sort mode. Dividers are only shown when more than
+  // one priority is in play (see the render).
+  const priorityGroups = useMemo(() => {
+    const byPriority = new Map<number, Todo[]>()
+    for (const todo of open) {
+      const existing = byPriority.get(todo.priority)
+      if (existing === undefined) {
+        byPriority.set(todo.priority, [todo])
+      } else {
+        existing.push(todo)
+      }
+    }
+    return Array.from(byPriority.keys())
+      .sort((a, b) => a - b)
+      .map((priority) => ({
+        priority,
+        todos: sortTodos(byPriority.get(priority) ?? [], sortMode)
+      }))
   }, [open, sortMode])
+
+  const displayOpen = useMemo(() => {
+    return priorityGroups.flatMap((group) => group.todos)
+  }, [priorityGroups])
 
   const done = useMemo(() => {
     return visible.filter((todo) => todo.status === 'done')
@@ -264,21 +286,25 @@ export function App(): JSX.Element {
   }
 
   async function handleAdd(overrideCategoryId?: string | null): Promise<void> {
+    // Pull out a `!N` priority token first; the rest is the text + #list logic.
+    const { priority, text: rawDraft } = parsePriority(draft)
+    const prio = priority ?? undefined
+
     if (overrideCategoryId !== undefined) {
-      const text = stripTrailingHashtag(draft).trim()
+      const text = stripTrailingHashtag(rawDraft).trim()
       if (text.length === 0) {
         return
       }
-      await window.jot.addTodo(text, overrideCategoryId)
+      await window.jot.addTodo(text, overrideCategoryId, prio)
       setDraft('')
       setAddSuggestionIndex(0)
       return
     }
 
-    const match = draft.match(TRAILING_HASHTAG)
+    const match = rawDraft.match(TRAILING_HASHTAG)
     if (match !== null && match[1].length > 0) {
       const rawName = match[1]
-      const text = stripTrailingHashtag(draft).trim()
+      const text = stripTrailingHashtag(rawDraft).trim()
       if (text.length === 0) {
         setDraft('')
         return
@@ -288,14 +314,14 @@ export function App(): JSX.Element {
       })
       const categoryId =
         existing !== undefined ? existing.id : await window.jot.addCategory(rawName)
-      await window.jot.addTodo(text, categoryId)
+      await window.jot.addTodo(text, categoryId, prio)
     } else {
-      const text = draft.trim()
+      const text = rawDraft.trim()
       if (text.length === 0) {
         return
       }
       const categoryId = filter === 'all' || filter === 'uncategorized' ? null : filter
-      await window.jot.addTodo(text, categoryId)
+      await window.jot.addTodo(text, categoryId, prio)
     }
     setDraft('')
     setAddSuggestionIndex(0)
@@ -544,29 +570,40 @@ export function App(): JSX.Element {
             ) : (
               <>
                 <SortableContext items={openIds} strategy={verticalListSortingStrategy}>
-                  <ul className="todo-list">
-                    {displayOpen.map((todo) => {
-                      return (
-                        <TodoItem
-                          key={todo.id}
-                          todo={todo}
-                          category={categoryFor(todo)}
-                          tagsById={tagsById}
-                          showCategoryTag={filter === 'all'}
-                          editingId={editingTodoId}
-                          sortable={sortMode === 'manual'}
-                          onSetStatus={(id, status) => window.jot.setStatus(id, status)}
-                          onRemove={(id) => window.jot.removeTodo(id)}
-                          onSelect={toggleSelectTodo}
-                          onStartEdit={setEditingTodoId}
-                          onStopEdit={() => setEditingTodoId(null)}
-                        />
-                      )
-                    })}
-                    {displayOpen.length === 0 ? (
+                  {priorityGroups.map((group) => {
+                    return (
+                      <div key={group.priority} className="priority-group">
+                        {priorityGroups.length > 1 ? (
+                          <div className="priority-divider">{priorityLabel(group.priority)}</div>
+                        ) : null}
+                        <ul className="todo-list">
+                          {group.todos.map((todo) => {
+                            return (
+                              <TodoItem
+                                key={todo.id}
+                                todo={todo}
+                                category={categoryFor(todo)}
+                                tagsById={tagsById}
+                                showCategoryTag={filter === 'all'}
+                                editingId={editingTodoId}
+                                sortable={sortMode === 'manual'}
+                                onSetStatus={(id, status) => window.jot.setStatus(id, status)}
+                                onRemove={(id) => window.jot.removeTodo(id)}
+                                onSelect={toggleSelectTodo}
+                                onStartEdit={setEditingTodoId}
+                                onStopEdit={() => setEditingTodoId(null)}
+                              />
+                            )
+                          })}
+                        </ul>
+                      </div>
+                    )
+                  })}
+                  {displayOpen.length === 0 ? (
+                    <ul className="todo-list">
                       <li className="empty">Nothing open here. Nice.</li>
-                    ) : null}
-                  </ul>
+                    </ul>
+                  ) : null}
                 </SortableContext>
 
                 {done.length > 0 ? (

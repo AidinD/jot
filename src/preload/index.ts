@@ -5,11 +5,14 @@ const jotApi = {
   getState: (): Promise<JotState> => {
     return ipcRenderer.invoke('state:get')
   },
-  addTodo: (text: string, categoryId: string | null): Promise<void> => {
-    return ipcRenderer.invoke('todos:add', text, categoryId)
+  addTodo: (text: string, categoryId: string | null, priority?: number): Promise<void> => {
+    return ipcRenderer.invoke('todos:add', text, categoryId, priority)
   },
   setStatus: (id: string, status: TodoStatus): Promise<void> => {
     return ipcRenderer.invoke('todos:setStatus', id, status)
+  },
+  setTodoPriority: (id: string, priority: number): Promise<void> => {
+    return ipcRenderer.invoke('todos:setPriority', id, priority)
   },
   updateTodo: (id: string, patch: { text?: string; description?: string }): Promise<void> => {
     return ipcRenderer.invoke('todos:update', id, patch)
@@ -80,8 +83,8 @@ const jotApi = {
 }
 
 const captureApi = {
-  submit: (text: string, categoryId: string | null): Promise<void> => {
-    return ipcRenderer.invoke('capture:submit', text, categoryId)
+  submit: (text: string, categoryId: string | null, priority?: number): Promise<void> => {
+    return ipcRenderer.invoke('capture:submit', text, categoryId, priority)
   },
   close: (): void => {
     ipcRenderer.send('capture:close')
