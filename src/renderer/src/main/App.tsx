@@ -21,6 +21,7 @@ import { BoardView } from './BoardView'
 import { SortMenu } from './SortMenu'
 import { ConfirmModal } from './ConfirmModal'
 import { TagManager } from './TagManager'
+import { PriorityBand } from './PriorityBand'
 
 const MAX_ADD_SUGGESTIONS = 6
 
@@ -388,6 +389,15 @@ export function App(): JSX.Element {
         await window.jot.setStatus(todoId, status)
         return
       }
+      // A priority band lives under Open, so dropping here also opens the todo.
+      if (target.startsWith('prio:')) {
+        const priority = parseInt(target.slice('prio:'.length), 10)
+        if (Number.isFinite(priority)) {
+          await window.jot.setStatus(todoId, 'open')
+          await window.jot.setTodoPriority(todoId, priority)
+        }
+        return
+      }
       return
     }
 
@@ -397,8 +407,16 @@ export function App(): JSX.Element {
       return
     }
 
-    // Todo reorder within the same list
     if (todoId !== overId) {
+      // Dropped onto a task in a different priority band → adopt that priority
+      // instead of reordering across the divider.
+      const dragged = state.todos.find((t) => t.id === todoId)
+      const target = state.todos.find((t) => t.id === overId)
+      if (dragged !== undefined && target !== undefined && dragged.priority !== target.priority) {
+        await window.jot.setTodoPriority(todoId, target.priority)
+        return
+      }
+      // Reorder within the same band/list
       const oldIndex = openIds.indexOf(todoId)
       const newIndex = openIds.indexOf(overId)
       if (oldIndex !== -1 && newIndex !== -1) {
@@ -572,7 +590,11 @@ export function App(): JSX.Element {
                 <SortableContext items={openIds} strategy={verticalListSortingStrategy}>
                   {priorityGroups.map((group) => {
                     return (
-                      <div key={group.priority} className="priority-group">
+                      <PriorityBand
+                        key={group.priority}
+                        priority={group.priority}
+                        className="priority-group"
+                      >
                         {priorityGroups.length > 1 ? (
                           <div className="priority-divider">{priorityLabel(group.priority)}</div>
                         ) : null}
@@ -596,7 +618,7 @@ export function App(): JSX.Element {
                             )
                           })}
                         </ul>
-                      </div>
+                      </PriorityBand>
                     )
                   })}
                   {displayOpen.length === 0 ? (
