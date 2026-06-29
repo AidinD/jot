@@ -34,6 +34,7 @@ export function DetailPanel({
   const [description, setDescription] = useState(todo.description)
   const [priorityDraft, setPriorityDraft] = useState(String(todo.priority))
   const [imagePaths, setImagePaths] = useState<Map<string, string>>(new Map())
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const descRef = useRef<HTMLTextAreaElement>(null)
   const prevIdRef = useRef(todo.id)
 
@@ -98,6 +99,22 @@ export function DetailPanel({
       document.removeEventListener('paste', handlePaste)
     }
   }, [todo.id])
+
+  // Close the image preview on Escape.
+  useEffect(() => {
+    if (previewSrc === null) {
+      return
+    }
+    function handleKey(event: KeyboardEvent): void {
+      if (event.key === 'Escape') {
+        setPreviewSrc(null)
+      }
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('keydown', handleKey)
+    }
+  }, [previewSrc])
 
   function saveTitle(): void {
     const trimmed = title.trim()
@@ -264,7 +281,14 @@ export function DetailPanel({
           const absPath = imagePaths.get(rel)
           return (
             <div key={rel} className="detail-image-thumb">
-              {absPath ? <img src={`file://${absPath}`} alt="" /> : null}
+              {absPath ? (
+                <img
+                  src={`file://${absPath}`}
+                  alt=""
+                  title="Click to preview"
+                  onClick={() => setPreviewSrc(`file://${absPath}`)}
+                />
+              ) : null}
               <button
                 className="detail-image-remove"
                 onClick={() => handleRemoveImage(rel)}
@@ -285,6 +309,12 @@ export function DetailPanel({
           <span>Completed {completed.toLocaleDateString()} {completed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         ) : null}
       </div>
+
+      {previewSrc !== null ? (
+        <div className="image-preview-overlay" onClick={() => setPreviewSrc(null)}>
+          <img src={previewSrc} alt="" />
+        </div>
+      ) : null}
     </aside>
   )
 }
