@@ -868,6 +868,44 @@ body {
   gap: 8px;
 }
 
+.search-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-input {
+  width: 140px;
+  padding: 5px 24px 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  width: 200px;
+  transition: width 150ms ease;
+}
+
+.search-clear {
+  position: absolute;
+  right: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.search-clear:hover {
+  color: var(--text);
+}
+
 .sort-control {
   display: flex;
   align-items: center;
@@ -1307,6 +1345,43 @@ body {
   color: var(--text-dim);
   font-size: 10px;
   font-weight: 700;
+}
+
+.deadline-badge {
+  flex-shrink: 0;
+  padding: 1px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-alt);
+  color: var(--text-dim);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.deadline-badge.due-today {
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.deadline-badge.overdue {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.detail-deadline-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.detail-deadline-input {
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  color-scheme: dark;
 }
 
 .detail-prio-row {

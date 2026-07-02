@@ -157,8 +157,14 @@ function registerIpc(): void {
   })
   ipcMain.handle(
     'todos:add',
-    (_event, text: string, categoryId: string | null, priority?: number) => {
-      return store.addTodo(text, categoryId, priority)
+    (
+      _event,
+      text: string,
+      categoryId: string | null,
+      priority?: number,
+      deadline?: number | null
+    ) => {
+      return store.addTodo(text, categoryId, priority, deadline ?? null)
     }
   )
   ipcMain.handle('todos:setStatus', (_event, id: string, status: TodoStatus, toTop?: boolean) => {
@@ -166,6 +172,9 @@ function registerIpc(): void {
   })
   ipcMain.handle('todos:setPriority', (_event, id: string, priority: number) => {
     return store.setTodoPriority(id, priority)
+  })
+  ipcMain.handle('todos:setDeadline', (_event, id: string, deadline: number | null) => {
+    return store.setTodoDeadline(id, deadline)
   })
   ipcMain.handle('todos:update', (_event, id: string, patch: { text?: string; description?: string }) => {
     return store.updateTodo(id, patch)
@@ -237,8 +246,14 @@ function registerIpc(): void {
 
   ipcMain.handle(
     'capture:submit',
-    async (_event, text: string, categoryId: string | null, priority?: number) => {
-      await store.addTodo(text, categoryId, priority)
+    async (
+      _event,
+      text: string,
+      categoryId: string | null,
+      priority?: number,
+      deadline?: number | null
+    ) => {
+      await store.addTodo(text, categoryId, priority, deadline ?? null)
       if (captureWindow !== null) {
         captureWindow.hide()
       }

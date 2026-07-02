@@ -5,14 +5,22 @@ const jotApi = {
   getState: (): Promise<JotState> => {
     return ipcRenderer.invoke('state:get')
   },
-  addTodo: (text: string, categoryId: string | null, priority?: number): Promise<void> => {
-    return ipcRenderer.invoke('todos:add', text, categoryId, priority)
+  addTodo: (
+    text: string,
+    categoryId: string | null,
+    priority?: number,
+    deadline?: number | null
+  ): Promise<void> => {
+    return ipcRenderer.invoke('todos:add', text, categoryId, priority, deadline)
   },
   setStatus: (id: string, status: TodoStatus, toTop?: boolean): Promise<void> => {
     return ipcRenderer.invoke('todos:setStatus', id, status, toTop)
   },
   setTodoPriority: (id: string, priority: number): Promise<void> => {
     return ipcRenderer.invoke('todos:setPriority', id, priority)
+  },
+  setTodoDeadline: (id: string, deadline: number | null): Promise<void> => {
+    return ipcRenderer.invoke('todos:setDeadline', id, deadline)
   },
   updateTodo: (id: string, patch: { text?: string; description?: string }): Promise<void> => {
     return ipcRenderer.invoke('todos:update', id, patch)
@@ -83,8 +91,13 @@ const jotApi = {
 }
 
 const captureApi = {
-  submit: (text: string, categoryId: string | null, priority?: number): Promise<void> => {
-    return ipcRenderer.invoke('capture:submit', text, categoryId, priority)
+  submit: (
+    text: string,
+    categoryId: string | null,
+    priority?: number,
+    deadline?: number | null
+  ): Promise<void> => {
+    return ipcRenderer.invoke('capture:submit', text, categoryId, priority, deadline)
   },
   close: (): void => {
     ipcRenderer.send('capture:close')

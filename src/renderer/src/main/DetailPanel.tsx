@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
+import { fromDateInputValue, toDateInputValue } from '@shared/deadline'
 
 const STATUS_OPTIONS: { value: TodoStatus; label: string }[] = [
   { value: 'open', label: 'Open' },
@@ -153,6 +154,10 @@ export function DetailPanel({
     savePriority(String(todo.priority + delta))
   }
 
+  function handleDeadlineChange(value: string): void {
+    window.jot.setTodoDeadline(todo.id, fromDateInputValue(value))
+  }
+
   function handleAddImage(): void {
     window.jot.addImage(todo.id)
   }
@@ -232,6 +237,21 @@ export function DetailPanel({
           +
         </button>
         <span className="detail-prio-hint">0 = none · lower sorts higher</span>
+      </div>
+
+      <span className="detail-section-label">Deadline</span>
+      <div className="detail-deadline-row">
+        <input
+          className="detail-deadline-input"
+          type="date"
+          value={toDateInputValue(todo.deadline)}
+          onChange={(e) => handleDeadlineChange(e.target.value)}
+        />
+        {todo.deadline !== null ? (
+          <button className="link-button" onClick={() => window.jot.setTodoDeadline(todo.id, null)}>
+            Clear
+          </button>
+        ) : null}
       </div>
 
       <div className="detail-section-head">
