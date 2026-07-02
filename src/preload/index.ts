@@ -8,8 +8,8 @@ const jotApi = {
   addTodo: (text: string, categoryId: string | null, priority?: number): Promise<void> => {
     return ipcRenderer.invoke('todos:add', text, categoryId, priority)
   },
-  setStatus: (id: string, status: TodoStatus): Promise<void> => {
-    return ipcRenderer.invoke('todos:setStatus', id, status)
+  setStatus: (id: string, status: TodoStatus, toTop?: boolean): Promise<void> => {
+    return ipcRenderer.invoke('todos:setStatus', id, status, toTop)
   },
   setTodoPriority: (id: string, priority: number): Promise<void> => {
     return ipcRenderer.invoke('todos:setPriority', id, priority)

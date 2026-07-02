@@ -741,6 +741,12 @@ body {
   letter-spacing: 0.5px;
 }
 
+.board-column-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .board-column-header[data-status='open'] {
   background: rgba(111, 156, 255, 0.1);
   color: var(--accent);

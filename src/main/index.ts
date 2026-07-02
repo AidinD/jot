@@ -161,8 +161,8 @@ function registerIpc(): void {
       return store.addTodo(text, categoryId, priority)
     }
   )
-  ipcMain.handle('todos:setStatus', (_event, id: string, status: TodoStatus) => {
-    return store.setStatus(id, status)
+  ipcMain.handle('todos:setStatus', (_event, id: string, status: TodoStatus, toTop?: boolean) => {
+    return store.setStatus(id, status, toTop)
   })
   ipcMain.handle('todos:setPriority', (_event, id: string, priority: number) => {
     return store.setTodoPriority(id, priority)

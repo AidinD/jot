@@ -53,7 +53,7 @@ export type ViewMode = 'list' | 'board'
 export interface JotApi {
   getState: () => Promise<JotState>
   addTodo: (text: string, categoryId: string | null, priority?: number) => Promise<void>
-  setStatus: (id: string, status: TodoStatus) => Promise<void>
+  setStatus: (id: string, status: TodoStatus, toTop?: boolean) => Promise<void>
   setTodoPriority: (id: string, priority: number) => Promise<void>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   removeTodo: (id: string) => Promise<void>
