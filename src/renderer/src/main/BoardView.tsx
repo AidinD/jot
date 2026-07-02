@@ -93,7 +93,23 @@ function BoardColumn({
     <div className="board-column">
       <div className="board-column-header" data-status={status}>
         <span>{label}</span>
-        <span className="board-column-count">{todos.length}</span>
+        <div className="board-column-actions">
+          {status === 'done' && todos.length > 0 ? (
+            <>
+              <button
+                className="link-button"
+                title="Move completed to archive.json (keeps history)"
+                onClick={() => window.jot.archiveCompleted()}
+              >
+                Archive
+              </button>
+              <button className="link-button" onClick={() => window.jot.clearCompleted()}>
+                Clear
+              </button>
+            </>
+          ) : null}
+          <span className="board-column-count">{todos.length}</span>
+        </div>
       </div>
       <div
         ref={setNodeRef}

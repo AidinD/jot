@@ -74,7 +74,7 @@ export class TodoStore {
     await this.persist()
   }
 
-  async setStatus(id: string, status: TodoStatus): Promise<void> {
+  async setStatus(id: string, status: TodoStatus, toTop = false): Promise<void> {
     this.state.todos = this.state.todos.map((todo) => {
       if (todo.id !== id) {
         return todo
@@ -85,6 +85,17 @@ export class TodoStore {
         completedAt: status === 'done' ? Date.now() : null
       }
     })
+    // When moved via a column drag, land at the top of the new column (front of
+    // the array, so it sorts first among its new status/band).
+    if (toTop) {
+      const index = this.state.todos.findIndex((todo) => todo.id === id)
+      if (index > 0) {
+        const next = [...this.state.todos]
+        const [moved] = next.splice(index, 1)
+        next.unshift(moved)
+        this.state.todos = next
+      }
+    }
     await this.persist()
   }
 
