@@ -2,9 +2,15 @@ import type { JotState, TodoStatus } from '../renderer/src/shared/types'
 
 interface JotBridge {
   getState: () => Promise<JotState>
-  addTodo: (text: string, categoryId: string | null, priority?: number) => Promise<void>
+  addTodo: (
+    text: string,
+    categoryId: string | null,
+    priority?: number,
+    deadline?: number | null
+  ) => Promise<void>
   setStatus: (id: string, status: TodoStatus, toTop?: boolean) => Promise<void>
   setTodoPriority: (id: string, priority: number) => Promise<void>
+  setTodoDeadline: (id: string, deadline: number | null) => Promise<void>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   addImage: (todoId: string) => Promise<void>
   addImageData: (todoId: string, bytes: Uint8Array, ext: string) => Promise<void>
@@ -27,7 +33,12 @@ interface JotBridge {
 }
 
 interface CaptureBridge {
-  submit: (text: string, categoryId: string | null, priority?: number) => Promise<void>
+  submit: (
+    text: string,
+    categoryId: string | null,
+    priority?: number,
+    deadline?: number | null
+  ) => Promise<void>
   close: () => void
   onReset: (callback: () => void) => () => void
 }

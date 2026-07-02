@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Category } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 import { parsePriority } from '@shared/priority'
+import { parseDeadline } from '@shared/deadline'
 
 const MAX_SUGGESTIONS = 6
 
@@ -92,12 +93,13 @@ export function Capture(): JSX.Element {
 
   function submitWith(value: string, categoryId: string | null): void {
     const { priority, text: withoutPriority } = parsePriority(value)
-    const trimmed = withoutPriority.trim()
+    const { deadline, text: withoutDeadline } = parseDeadline(withoutPriority)
+    const trimmed = withoutDeadline.trim()
     if (trimmed.length === 0) {
       window.capture.close()
       return
     }
-    window.capture.submit(trimmed, categoryId, priority ?? undefined)
+    window.capture.submit(trimmed, categoryId, priority ?? undefined, deadline ?? undefined)
     persistLastCategory(categoryId)
     setText('')
     setActiveIndex(0)

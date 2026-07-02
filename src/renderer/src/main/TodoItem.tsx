@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
+import { formatDeadline, isOverdue, isDueToday } from '@shared/deadline'
 import { TagChips } from './TagChips'
 
 const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
@@ -144,6 +145,14 @@ export function TodoItem({
       {todo.priority !== 0 ? (
         <span className="prio-badge" title={`Priority ${todo.priority}`}>
           {priorityLabel(todo.priority)}
+        </span>
+      ) : null}
+      {todo.deadline !== null ? (
+        <span
+          className={`deadline-badge${isOverdue(todo.deadline) ? ' overdue' : ''}${isDueToday(todo.deadline) ? ' due-today' : ''}`}
+          title={isOverdue(todo.deadline) ? 'Overdue' : 'Deadline'}
+        >
+          {formatDeadline(todo.deadline)}
         </span>
       ) : null}
       {!isEditing ? <TagChips tagIds={todo.tags} tagsById={tagsById} /> : null}

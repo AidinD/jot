@@ -13,6 +13,7 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 import type { Category, JotState, Tag, Todo, TodoStatus } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 import { parsePriority, priorityLabel } from '@shared/priority'
+import { parseDeadline } from '@shared/deadline'
 import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
@@ -27,12 +28,13 @@ const MAX_ADD_SUGGESTIONS = 6
 
 const EMPTY_STATE: JotState = { todos: [], categories: [], tags: [] }
 
-type SortMode = 'manual' | 'status' | 'date'
+type SortMode = 'manual' | 'status' | 'date' | 'deadline'
 
 const SORT_OPTIONS: { value: SortMode; label: string }[] = [
   { value: 'manual', label: 'Manual' },
   { value: 'status', label: 'Status' },
-  { value: 'date', label: 'Date' }
+  { value: 'date', label: 'Date' },
+  { value: 'deadline', label: 'Deadline' }
 ]
 
 // In-progress floats to the top, then open, then review (awaiting sign-off).
@@ -58,6 +60,14 @@ function sortTodos(list: Todo[], mode: SortMode): Todo[] {
     sorted.sort((a, b) => b.createdAt - a.createdAt)
   } else if (mode === 'status') {
     sorted.sort((a, b) => STATUS_RANK[a.status] - STATUS_RANK[b.status])
+  } else if (mode === 'deadline') {
+    // Nearest deadline first; no-deadline tasks sink to the bottom.
+    sorted.sort((a, b) => {
+      if (a.deadline === null && b.deadline === null) return 0
+      if (a.deadline === null) return 1
+      if (b.deadline === null) return -1
+      return a.deadline - b.deadline
+    })
   }
   return sorted
 }
@@ -96,6 +106,7 @@ export function App(): JSX.Element {
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState<string | null>(null)
   const [tagManagerOpen, setTagManagerOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
@@ -161,7 +172,7 @@ export function App(): JSX.Element {
   }, [filter, categoriesById])
 
   const visible = useMemo(() => {
-    return state.todos.filter((todo) => {
+    const byCategory = state.todos.filter((todo) => {
       if (filter === 'all') {
         return true
       }
@@ -170,7 +181,16 @@ export function App(): JSX.Element {
       }
       return todo.categoryId === filter
     })
-  }, [state.todos, filter])
+    const query = searchQuery.trim().toLowerCase()
+    if (query.length === 0) {
+      return byCategory
+    }
+    return byCategory.filter((todo) => {
+      return (
+        todo.text.toLowerCase().includes(query) || todo.description.toLowerCase().includes(query)
+      )
+    })
+  }, [state.todos, filter, searchQuery])
 
   const open = useMemo(() => {
     return visible.filter((todo) => todo.status !== 'done')
@@ -287,16 +307,19 @@ export function App(): JSX.Element {
   }
 
   async function handleAdd(overrideCategoryId?: string | null): Promise<void> {
-    // Pull out a `!N` priority token first; the rest is the text + #list logic.
-    const { priority, text: rawDraft } = parsePriority(draft)
+    // Pull out a `!N` priority token and an `@token` deadline; the rest is the
+    // text + #list logic.
+    const { priority, text: afterPriority } = parsePriority(draft)
+    const { deadline, text: rawDraft } = parseDeadline(afterPriority)
     const prio = priority ?? undefined
+    const dl = deadline ?? undefined
 
     if (overrideCategoryId !== undefined) {
       const text = stripTrailingHashtag(rawDraft).trim()
       if (text.length === 0) {
         return
       }
-      await window.jot.addTodo(text, overrideCategoryId, prio)
+      await window.jot.addTodo(text, overrideCategoryId, prio, dl)
       setDraft('')
       setAddSuggestionIndex(0)
       return
@@ -315,14 +338,14 @@ export function App(): JSX.Element {
       })
       const categoryId =
         existing !== undefined ? existing.id : await window.jot.addCategory(rawName)
-      await window.jot.addTodo(text, categoryId, prio)
+      await window.jot.addTodo(text, categoryId, prio, dl)
     } else {
       const text = rawDraft.trim()
       if (text.length === 0) {
         return
       }
       const categoryId = filter === 'all' || filter === 'uncategorized' ? null : filter
-      await window.jot.addTodo(text, categoryId, prio)
+      await window.jot.addTodo(text, categoryId, prio, dl)
     }
     setDraft('')
     setAddSuggestionIndex(0)
@@ -446,6 +469,23 @@ export function App(): JSX.Element {
           Jot <span className="version">v{__APP_VERSION__}</span>
         </h1>
         <div className="header-actions">
+          <div className="search-control">
+            <input
+              className="search-input"
+              placeholder="Search…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery.length > 0 ? (
+              <button
+                className="search-clear"
+                title="Clear search"
+                onClick={() => setSearchQuery('')}
+              >
+                ×
+              </button>
+            ) : null}
+          </div>
           <div className="sort-control" title="Sort the open list">
             <span className="sort-label">Sort</span>
             <SortMenu value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} />

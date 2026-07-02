@@ -52,7 +52,12 @@ export class TodoStore {
     return this.state
   }
 
-  async addTodo(text: string, categoryId: string | null, priority = 0): Promise<void> {
+  async addTodo(
+    text: string,
+    categoryId: string | null,
+    priority = 0,
+    deadline: number | null = null
+  ): Promise<void> {
     const trimmed = text.trim()
     if (trimmed.length === 0) {
       return
@@ -66,6 +71,7 @@ export class TodoStore {
       categoryId,
       tags: [],
       priority: Math.trunc(priority),
+      deadline,
       createdAt: Date.now(),
       completedAt: null
     }
@@ -105,6 +111,16 @@ export class TodoStore {
         return todo
       }
       return { ...todo, priority: Math.trunc(priority) }
+    })
+    await this.persist()
+  }
+
+  async setTodoDeadline(id: string, deadline: number | null): Promise<void> {
+    this.state.todos = this.state.todos.map((todo) => {
+      if (todo.id !== id) {
+        return todo
+      }
+      return { ...todo, deadline }
     })
     await this.persist()
   }
