@@ -1336,6 +1336,141 @@ body {
   padding: 4px 2px 2px;
 }
 
+/* --- Subtasks --- */
+
+.subtask-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0 2px;
+  flex-shrink: 0;
+}
+
+.subtask-toggle:hover {
+  color: var(--text);
+}
+
+.subtask-count-badge {
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.subtask-panel-row {
+  padding: 4px 0 4px 30px;
+}
+
+.board-card .subtask-toggle {
+  margin-top: -2px;
+}
+
+.subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtask-progress {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.subtask-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+}
+
+.subtask-row:hover {
+  background: var(--surface-hover);
+}
+
+.subtask-checkbox {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  border: 2px solid var(--text-dim);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.subtask-checkbox.done {
+  border-color: var(--green);
+  background: var(--green);
+}
+
+.subtask-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subtask-text.done {
+  color: var(--text-dim);
+  text-decoration: line-through;
+}
+
+.subtask-remove {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.subtask-remove:hover {
+  color: var(--danger);
+}
+
+.subtask-add-input {
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.detail-parent-link {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: -4px;
+}
+
+.detail-parent-link:hover {
+  color: var(--accent);
+}
+
 .prio-badge {
   flex-shrink: 0;
   padding: 1px 6px;

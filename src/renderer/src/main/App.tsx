@@ -171,8 +171,30 @@ export function App(): JSX.Element {
     }
   }, [filter, categoriesById])
 
+  // Subtasks live tucked under their parent (see subtasksByParent) and never
+  // appear in the main flow — only root-level todos are filtered/sorted/grouped.
+  const rootTodos = useMemo(() => {
+    return state.todos.filter((todo) => todo.parentId === null)
+  }, [state.todos])
+
+  const subtasksByParent = useMemo(() => {
+    const map = new Map<string, Todo[]>()
+    for (const todo of state.todos) {
+      if (todo.parentId === null) {
+        continue
+      }
+      const existing = map.get(todo.parentId)
+      if (existing === undefined) {
+        map.set(todo.parentId, [todo])
+      } else {
+        existing.push(todo)
+      }
+    }
+    return map
+  }, [state.todos])
+
   const visible = useMemo(() => {
-    const byCategory = state.todos.filter((todo) => {
+    const byCategory = rootTodos.filter((todo) => {
       if (filter === 'all') {
         return true
       }
@@ -252,7 +274,7 @@ export function App(): JSX.Element {
     const byCategory: Record<string, number> = {}
     let all = 0
     let uncategorized = 0
-    for (const todo of state.todos) {
+    for (const todo of rootTodos) {
       if (todo.status === 'done') {
         continue
       }
@@ -264,7 +286,7 @@ export function App(): JSX.Element {
       }
     }
     return { all, uncategorized, byCategory }
-  }, [state.todos])
+  }, [rootTodos])
 
   const activeTodo = useMemo(() => {
     if (activeId === null) {
@@ -279,6 +301,11 @@ export function App(): JSX.Element {
     if (selectedTodoId === null) return null
     return state.todos.find((t) => t.id === selectedTodoId) ?? null
   }, [selectedTodoId, state.todos])
+
+  const selectedTodoParent = useMemo(() => {
+    if (selectedTodo === null || selectedTodo.parentId === null) return null
+    return state.todos.find((t) => t.id === selectedTodo.parentId) ?? null
+  }, [selectedTodo, state.todos])
 
   // Clicking the already-open todo closes the detail panel (toggle).
   const toggleSelectTodo = useCallback((id: string) => {
@@ -632,6 +659,7 @@ export function App(): JSX.Element {
                 todos={visible}
                 categoriesById={categoriesById}
                 tagsById={tagsById}
+                subtasksByParent={subtasksByParent}
                 onSelect={toggleSelectTodo}
               />
             ) : (
@@ -655,6 +683,7 @@ export function App(): JSX.Element {
                                 todo={todo}
                                 category={categoryFor(todo)}
                                 tagsById={tagsById}
+                                subtasks={subtasksByParent.get(todo.id) ?? []}
                                 showCategoryTag={filter === 'all'}
                                 editingId={editingTodoId}
                                 sortable={sortMode === 'manual'}
@@ -752,6 +781,9 @@ export function App(): JSX.Element {
               tags={state.tags}
               onManageTags={() => setTagManagerOpen(true)}
               onClose={() => setSelectedTodoId(null)}
+              parent={selectedTodoParent}
+              subtasks={subtasksByParent.get(selectedTodo.id) ?? []}
+              onSelectTodo={setSelectedTodoId}
             />
           ) : null}
         </div>

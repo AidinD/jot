@@ -72,12 +72,43 @@ export class TodoStore {
       tags: [],
       priority: Math.trunc(priority),
       deadline,
+      parentId: null,
       createdAt: Date.now(),
       completedAt: null
     }
     // Newest items land on top, per the quick-capture flow.
     this.state.todos = [todo, ...this.state.todos]
     await this.persist()
+  }
+
+  /**
+   * A subtask is a regular todo with `parentId` set, inheriting the parent's
+   * category. Nesting is one level deep — the parent must not itself be a
+   * subtask (the caller/UI is responsible for only offering this on root todos).
+   */
+  async addSubtask(parentId: string, text: string): Promise<string> {
+    const trimmed = text.trim()
+    if (trimmed.length === 0) {
+      return ''
+    }
+    const parent = this.state.todos.find((todo) => todo.id === parentId)
+    const subtask: Todo = {
+      id: randomUUID(),
+      text: trimmed,
+      status: 'open' as const,
+      description: '',
+      images: [],
+      categoryId: parent?.categoryId ?? null,
+      tags: [],
+      priority: 0,
+      deadline: null,
+      parentId,
+      createdAt: Date.now(),
+      completedAt: null
+    }
+    this.state.todos = [subtask, ...this.state.todos]
+    await this.persist()
+    return subtask.id
   }
 
   async setStatus(id: string, status: TodoStatus, toTop = false): Promise<void> {
@@ -209,8 +240,10 @@ export class TodoStore {
   }
 
   async removeTodo(id: string): Promise<void> {
+    // Removing a task also removes its subtasks (one level deep, so a single
+    // pass is enough — subtasks cannot have their own subtasks).
     this.state.todos = this.state.todos.filter((todo) => {
-      return todo.id !== id
+      return todo.id !== id && todo.parentId !== id
     })
     await this.persist()
   }
@@ -256,8 +289,19 @@ export class TodoStore {
   }
 
   async clearCompleted(): Promise<void> {
+    const doneIds = new Set(
+      this.state.todos.filter((todo) => todo.status === 'done').map((todo) => todo.id)
+    )
     this.state.todos = this.state.todos.filter((todo) => {
-      return todo.status !== 'done'
+      if (todo.status === 'done') {
+        return false
+      }
+      // A subtask whose parent just got cleared would otherwise be orphaned
+      // (invisible forever — the main flow only shows root todos).
+      if (todo.parentId !== null && doneIds.has(todo.parentId)) {
+        return false
+      }
+      return true
     })
     await this.persist()
   }
@@ -268,7 +312,14 @@ export class TodoStore {
    * clearCompleted this preserves the data. Returns how many were archived.
    */
   async archiveCompleted(): Promise<number> {
-    const completed = this.state.todos.filter((todo) => todo.status === 'done')
+    const doneIds = new Set(
+      this.state.todos.filter((todo) => todo.status === 'done').map((todo) => todo.id)
+    )
+    // Cascade: subtasks of a done parent are archived alongside it (even if not
+    // themselves done), so archiving a finished task never orphans its subtasks.
+    const completed = this.state.todos.filter((todo) => {
+      return doneIds.has(todo.id) || (todo.parentId !== null && doneIds.has(todo.parentId))
+    })
     if (completed.length === 0) {
       return 0
     }
@@ -298,7 +349,8 @@ export class TodoStore {
     await fs.writeFile(tempPath, JSON.stringify({ todos: next }, null, 2), 'utf-8')
     await fs.rename(tempPath, archivePath)
 
-    this.state.todos = this.state.todos.filter((todo) => todo.status !== 'done')
+    const archivedIds = new Set(completed.map((todo) => todo.id))
+    this.state.todos = this.state.todos.filter((todo) => !archivedIds.has(todo.id))
     await this.persist()
     return completed.length
   }

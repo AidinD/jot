@@ -5,6 +5,7 @@ import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
 import { formatDeadline, isOverdue, isDueToday } from '@shared/deadline'
 import { TagChips } from './TagChips'
+import { SubtaskList } from './SubtaskList'
 
 const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
 
@@ -12,6 +13,7 @@ interface TodoItemProps {
   todo: Todo
   category: Category | null
   tagsById: Map<string, Tag>
+  subtasks: Todo[]
   showCategoryTag: boolean
   editingId: string | null
   sortable: boolean
@@ -26,6 +28,7 @@ export function TodoItem({
   todo,
   category,
   tagsById,
+  subtasks,
   showCategoryTag,
   editingId,
   sortable,
@@ -35,6 +38,7 @@ export function TodoItem({
   onStartEdit,
   onStopEdit
 }: TodoItemProps): JSX.Element {
+  const [expanded, setExpanded] = useState(false)
   const isEditing = editingId === todo.id
   // The whole row is the drag target (grabbable everywhere), so disable drag
   // while editing — otherwise selecting text in the edit input would drag.
@@ -77,96 +81,120 @@ export function TodoItem({
   }
 
   const rowClass = `todo-row${isDone ? ' done' : ''}`
+  const hasSubtasks = subtasks.length > 0
+  const subtaskDoneCount = subtasks.filter((s) => s.status === 'done').length
 
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      className={`${rowClass}${sortable && !isEditing ? ' draggable' : ''}`}
-      onClick={() => {
-        if (!isEditing) {
-          onSelect(todo.id)
-        }
-      }}
-      {...attributes}
-      {...listeners}
-    >
-      {sortable ? (
-        <span className="drag-handle" title="Drag to reorder or onto a list" aria-hidden="true">
-          ⠿
-        </span>
-      ) : (
-        <span className="drag-handle placeholder" aria-hidden="true" />
-      )}
-      <button
-        className={`status-checkbox ${todo.status}`}
-        title={`Status: ${todo.status} (click to cycle)`}
-        onClick={(e) => {
-          e.stopPropagation()
-          cycleStatus(false)
+    <>
+      <li
+        ref={setNodeRef}
+        style={style}
+        className={`${rowClass}${sortable && !isEditing ? ' draggable' : ''}`}
+        onClick={() => {
+          if (!isEditing) {
+            onSelect(todo.id)
+          }
         }}
-        onContextMenu={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          cycleStatus(true)
-        }}
-      />
-      {showCategoryTag && category !== null ? (
-        <span className="cat-dot" style={{ background: category.color }} title={category.name} />
-      ) : null}
-      {isEditing ? (
-        <input
-          ref={inputRef}
-          className="todo-edit-input"
-          value={draft}
-          onClick={(e) => e.stopPropagation()}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              commitEdit()
-            }
-            if (e.key === 'Escape') {
-              onStopEdit()
-            }
-          }}
-          onBlur={commitEdit}
-        />
-      ) : (
-        <span
-          className="todo-text"
-          onDoubleClick={(e) => {
-            e.stopPropagation()
-            onStartEdit(todo.id)
-          }}
-        >
-          {todo.text}
-        </span>
-      )}
-      {todo.priority !== 0 ? (
-        <span className="prio-badge" title={`Priority ${todo.priority}`}>
-          {priorityLabel(todo.priority)}
-        </span>
-      ) : null}
-      {todo.deadline !== null ? (
-        <span
-          className={`deadline-badge${isOverdue(todo.deadline) ? ' overdue' : ''}${isDueToday(todo.deadline) ? ' due-today' : ''}`}
-          title={isOverdue(todo.deadline) ? 'Overdue' : 'Deadline'}
-        >
-          {formatDeadline(todo.deadline)}
-        </span>
-      ) : null}
-      {!isEditing ? <TagChips tagIds={todo.tags} tagsById={tagsById} /> : null}
-      <button
-        className="remove-button"
-        title="Delete"
-        onClick={(e) => {
-          e.stopPropagation()
-          onRemove(todo.id)
-        }}
+        {...attributes}
+        {...listeners}
       >
-        ×
-      </button>
-    </li>
+        {sortable ? (
+          <span className="drag-handle" title="Drag to reorder or onto a list" aria-hidden="true">
+            ⠿
+          </span>
+        ) : (
+          <span className="drag-handle placeholder" aria-hidden="true" />
+        )}
+        {hasSubtasks ? (
+          <button
+            className="subtask-toggle"
+            title={expanded ? 'Collapse subtasks' : 'Expand subtasks'}
+            onClick={(e) => {
+              e.stopPropagation()
+              setExpanded((v) => !v)
+            }}
+          >
+            {expanded ? '▾' : '▸'}
+            <span className="subtask-count-badge">
+              {subtaskDoneCount}/{subtasks.length}
+            </span>
+          </button>
+        ) : null}
+        <button
+          className={`status-checkbox ${todo.status}`}
+          title={`Status: ${todo.status} (click to cycle)`}
+          onClick={(e) => {
+            e.stopPropagation()
+            cycleStatus(false)
+          }}
+          onContextMenu={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            cycleStatus(true)
+          }}
+        />
+        {showCategoryTag && category !== null ? (
+          <span className="cat-dot" style={{ background: category.color }} title={category.name} />
+        ) : null}
+        {isEditing ? (
+          <input
+            ref={inputRef}
+            className="todo-edit-input"
+            value={draft}
+            onClick={(e) => e.stopPropagation()}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                commitEdit()
+              }
+              if (e.key === 'Escape') {
+                onStopEdit()
+              }
+            }}
+            onBlur={commitEdit}
+          />
+        ) : (
+          <span
+            className="todo-text"
+            onDoubleClick={(e) => {
+              e.stopPropagation()
+              onStartEdit(todo.id)
+            }}
+          >
+            {todo.text}
+          </span>
+        )}
+        {todo.priority !== 0 ? (
+          <span className="prio-badge" title={`Priority ${todo.priority}`}>
+            {priorityLabel(todo.priority)}
+          </span>
+        ) : null}
+        {todo.deadline !== null ? (
+          <span
+            className={`deadline-badge${isOverdue(todo.deadline) ? ' overdue' : ''}${isDueToday(todo.deadline) ? ' due-today' : ''}`}
+            title={isOverdue(todo.deadline) ? 'Overdue' : 'Deadline'}
+          >
+            {formatDeadline(todo.deadline)}
+          </span>
+        ) : null}
+        {!isEditing ? <TagChips tagIds={todo.tags} tagsById={tagsById} /> : null}
+        <button
+          className="remove-button"
+          title="Delete"
+          onClick={(e) => {
+            e.stopPropagation()
+            onRemove(todo.id)
+          }}
+        >
+          ×
+        </button>
+      </li>
+      {expanded && hasSubtasks ? (
+        <li className="subtask-panel-row">
+          <SubtaskList parentId={todo.id} subtasks={subtasks} onSelect={onSelect} />
+        </li>
+      ) : null}
+    </>
   )
 }
 

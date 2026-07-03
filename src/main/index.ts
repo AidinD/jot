@@ -176,6 +176,9 @@ function registerIpc(): void {
   ipcMain.handle('todos:setDeadline', (_event, id: string, deadline: number | null) => {
     return store.setTodoDeadline(id, deadline)
   })
+  ipcMain.handle('todos:addSubtask', (_event, parentId: string, text: string) => {
+    return store.addSubtask(parentId, text)
+  })
   ipcMain.handle('todos:update', (_event, id: string, patch: { text?: string; description?: string }) => {
     return store.updateTodo(id, patch)
   })
