@@ -1398,7 +1398,10 @@ body {
 }
 
 .subtask-row:hover {
-  background: var(--surface-hover);
+  /* --surface-hover is only a few units lighter than --surface (the panel/
+     card background this sits on), which read as no change at all on such a
+     compact row. --border is a much bigger, clearly visible jump. */
+  background: var(--border);
 }
 
 /* Sizes down the shared .status-checkbox for a nested checklist row; the
