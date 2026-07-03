@@ -50,26 +50,32 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
         {subtasks.map((subtask) => {
           const done = subtask.status === 'done'
           return (
-            <li key={subtask.id} className="subtask-row">
+            <li
+              key={subtask.id}
+              className="subtask-row"
+              onClick={() => onSelect(subtask.id)}
+            >
               <button
                 className={`status-checkbox subtask-checkbox ${subtask.status}`}
                 title={`Status: ${subtask.status} (click to cycle)`}
-                onClick={() => cycleStatus(subtask, false)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  cycleStatus(subtask, false)
+                }}
                 onContextMenu={(e) => {
                   e.preventDefault()
+                  e.stopPropagation()
                   cycleStatus(subtask, true)
                 }}
               />
-              <span
-                className={`subtask-text${done ? ' done' : ''}`}
-                onClick={() => onSelect(subtask.id)}
-              >
-                {subtask.text}
-              </span>
+              <span className={`subtask-text${done ? ' done' : ''}`}>{subtask.text}</span>
               <button
                 className="subtask-remove"
                 title="Delete subtask"
-                onClick={() => window.jot.removeTodo(subtask.id)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  window.jot.removeTodo(subtask.id)
+                }}
               >
                 ×
               </button>
