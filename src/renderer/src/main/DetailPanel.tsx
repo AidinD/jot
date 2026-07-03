@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { fromDateInputValue, toDateInputValue } from '@shared/deadline'
+import { SubtaskList } from './SubtaskList'
 
 const STATUS_OPTIONS: { value: TodoStatus; label: string }[] = [
   { value: 'open', label: 'Open' },
@@ -22,6 +23,9 @@ interface DetailPanelProps {
   tags: Tag[]
   onManageTags: () => void
   onClose: () => void
+  parent: Todo | null
+  subtasks: Todo[]
+  onSelectTodo: (id: string) => void
 }
 
 export function DetailPanel({
@@ -29,7 +33,10 @@ export function DetailPanel({
   category,
   tags,
   onManageTags,
-  onClose
+  onClose,
+  parent,
+  subtasks,
+  onSelectTodo
 }: DetailPanelProps): JSX.Element {
   const [title, setTitle] = useState(todo.text)
   const [description, setDescription] = useState(todo.description)
@@ -171,6 +178,11 @@ export function DetailPanel({
 
   return (
     <aside className="detail-panel">
+      {parent !== null ? (
+        <button className="detail-parent-link" onClick={() => onSelectTodo(parent.id)}>
+          ↑ {parent.text}
+        </button>
+      ) : null}
       <div className="detail-header">
         <input
           className="detail-title-input"
@@ -284,6 +296,13 @@ export function DetailPanel({
           <span className="detail-tag-empty">No tags yet — add some via Manage.</span>
         ) : null}
       </div>
+
+      {todo.parentId === null ? (
+        <>
+          <span className="detail-section-label">Subtasks</span>
+          <SubtaskList parentId={todo.id} subtasks={subtasks} onSelect={onSelectTodo} />
+        </>
+      ) : null}
 
       <span className="detail-section-label">Description</span>
       <textarea

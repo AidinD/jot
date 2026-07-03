@@ -11,6 +11,7 @@ interface JotBridge {
   setStatus: (id: string, status: TodoStatus, toTop?: boolean) => Promise<void>
   setTodoPriority: (id: string, priority: number) => Promise<void>
   setTodoDeadline: (id: string, deadline: number | null) => Promise<void>
+  addSubtask: (parentId: string, text: string) => Promise<string>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   addImage: (todoId: string) => Promise<void>
   addImageData: (todoId: string, bytes: Uint8Array, ext: string) => Promise<void>

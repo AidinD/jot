@@ -58,6 +58,7 @@ function normalizeTodo(raw: any): Todo {
     tags: Array.isArray(raw.tags) ? raw.tags.map((t: unknown) => String(t)) : [],
     priority: typeof raw.priority === 'number' ? Math.trunc(raw.priority) : 0,
     deadline: typeof raw.deadline === 'number' ? raw.deadline : null,
+    parentId: typeof raw.parentId === 'string' ? raw.parentId : null,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
     completedAt: typeof raw.completedAt === 'number' ? raw.completedAt : null
   }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
@@ -5,6 +6,7 @@ import { priorityLabel } from '@shared/priority'
 import { formatDeadline, isOverdue, isDueToday } from '@shared/deadline'
 import { TagChips } from './TagChips'
 import { PriorityBand } from './PriorityBand'
+import { SubtaskList } from './SubtaskList'
 
 /** Group todos by priority, ascending (lower number first). */
 function groupByPriority(todos: Todo[]): { priority: number; todos: Todo[] }[] {
@@ -33,6 +35,7 @@ interface BoardViewProps {
   todos: Todo[]
   categoriesById: Map<string, Category>
   tagsById: Map<string, Tag>
+  subtasksByParent: Map<string, Todo[]>
   onSelect: (id: string) => void
 }
 
@@ -40,6 +43,7 @@ export function BoardView({
   todos,
   categoriesById,
   tagsById,
+  subtasksByParent,
   onSelect
 }: BoardViewProps): JSX.Element {
   return (
@@ -54,6 +58,7 @@ export function BoardView({
             todos={columnTodos}
             categoriesById={categoriesById}
             tagsById={tagsById}
+            subtasksByParent={subtasksByParent}
             onSelect={onSelect}
           />
         )
@@ -69,6 +74,7 @@ function BoardColumn({
   todos,
   categoriesById,
   tagsById,
+  subtasksByParent,
   onSelect
 }: {
   status: TodoStatus
@@ -76,13 +82,23 @@ function BoardColumn({
   todos: Todo[]
   categoriesById: Map<string, Category>
   tagsById: Map<string, Tag>
+  subtasksByParent: Map<string, Todo[]>
   onSelect: (id: string) => void
 }): JSX.Element {
   const { setNodeRef, isOver } = useDroppable({ id: `drop:status:${status}` })
 
   function renderCard(todo: Todo): JSX.Element {
     const cat = todo.categoryId ? categoriesById.get(todo.categoryId) ?? null : null
-    return <BoardCard key={todo.id} todo={todo} cat={cat} tagsById={tagsById} onSelect={onSelect} />
+    return (
+      <BoardCard
+        key={todo.id}
+        todo={todo}
+        cat={cat}
+        tagsById={tagsById}
+        subtasks={subtasksByParent.get(todo.id) ?? []}
+        onSelect={onSelect}
+      />
+    )
   }
 
   // Only the Open column is split into priority bands (and only when more than
@@ -140,21 +156,27 @@ function BoardCard({
   todo,
   cat,
   tagsById,
+  subtasks,
   onSelect
 }: {
   todo: Todo
   cat: Category | null
   tagsById: Map<string, Tag>
+  subtasks: Todo[]
   onSelect: (id: string) => void
 }): JSX.Element {
+  const [expanded, setExpanded] = useState(false)
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: todo.id,
     data: { type: 'todo' }
   })
-  
+
   const style = transform ? {
     transform: CSS.Translate.toString(transform),
   } : undefined
+
+  const hasSubtasks = subtasks.length > 0
+  const subtaskDoneCount = subtasks.filter((s) => s.status === 'done').length
 
   return (
     <div
@@ -176,6 +198,26 @@ function BoardCard({
         ×
       </button>
       <div className="board-card-title">{todo.text}</div>
+      {hasSubtasks ? (
+        <button
+          className="subtask-toggle"
+          title={expanded ? 'Collapse subtasks' : 'Expand subtasks'}
+          onClick={(e) => {
+            e.stopPropagation()
+            setExpanded((v) => !v)
+          }}
+        >
+          {expanded ? '▾' : '▸'}
+          <span className="subtask-count-badge">
+            {subtaskDoneCount}/{subtasks.length}
+          </span>
+        </button>
+      ) : null}
+      {expanded && hasSubtasks ? (
+        <div onClick={(e) => e.stopPropagation()}>
+          <SubtaskList parentId={todo.id} subtasks={subtasks} onSelect={onSelect} />
+        </div>
+      ) : null}
       {todo.priority !== 0 ? (
         <span className="prio-badge" title={`Priority ${todo.priority}`}>
           {priorityLabel(todo.priority)}

@@ -22,6 +22,9 @@ const jotApi = {
   setTodoDeadline: (id: string, deadline: number | null): Promise<void> => {
     return ipcRenderer.invoke('todos:setDeadline', id, deadline)
   },
+  addSubtask: (parentId: string, text: string): Promise<string> => {
+    return ipcRenderer.invoke('todos:addSubtask', parentId, text)
+  },
   updateTodo: (id: string, patch: { text?: string; description?: string }): Promise<void> => {
     return ipcRenderer.invoke('todos:update', id, patch)
   },

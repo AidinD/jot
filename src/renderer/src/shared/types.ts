@@ -10,6 +10,9 @@ export interface Todo {
   tags: string[]
   priority: number
   deadline: number | null
+  // A todo with parentId set is a subtask. Nesting is one level deep — a
+  // subtask cannot itself have subtasks.
+  parentId: string | null
   createdAt: number
   completedAt: number | null
 }
@@ -62,6 +65,7 @@ export interface JotApi {
   setStatus: (id: string, status: TodoStatus, toTop?: boolean) => Promise<void>
   setTodoPriority: (id: string, priority: number) => Promise<void>
   setTodoDeadline: (id: string, deadline: number | null) => Promise<void>
+  addSubtask: (parentId: string, text: string) => Promise<string>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   removeTodo: (id: string) => Promise<void>
   setTodoCategory: (id: string, categoryId: string | null) => Promise<void>
