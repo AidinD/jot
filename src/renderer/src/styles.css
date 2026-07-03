@@ -1402,10 +1402,16 @@ body {
 
 /* Sizes down the shared .status-checkbox for a nested checklist row; the
    status colors (in-progress/review/done, including the ::after glyph) still
-   come from .status-checkbox's own rules. */
+   come from .status-checkbox's own rules. The base :hover (border → --text)
+   is too subtle at this size, so give it a clearer, more visible hover. */
 .subtask-checkbox {
   width: 14px;
   height: 14px;
+}
+
+.subtask-checkbox:hover {
+  border-color: var(--accent);
+  transform: scale(1.2);
 }
 
 .subtask-text {
