@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import type { Todo } from '@shared/types'
+import type { Todo, TodoStatus } from '@shared/types'
+
+const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
 
 interface SubtaskListProps {
   parentId: string
@@ -8,11 +10,11 @@ interface SubtaskListProps {
 }
 
 /**
- * A lightweight checklist for a task's subtasks. Subtasks are full Todos
- * (they can carry their own priority/tags/deadline), but this view only shows
- * a checkbox + text + remove — open the subtask itself (click its text) to
- * edit the rest. The checkbox toggles open/done directly rather than cycling
- * the full status set, since this is meant to read as a checklist.
+ * A lightweight checklist for a task's subtasks. Subtasks are full Todos with
+ * the same 4-state status as any task — the checkbox cycles through it
+ * (click forward, right-click back), colored the same way as the main list's
+ * status-checkbox. Open the subtask itself (click its text) to edit its
+ * priority/tags/deadline/description/images.
  */
 export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps): JSX.Element {
   const [draft, setDraft] = useState('')
@@ -24,6 +26,15 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
     }
     void window.jot.addSubtask(parentId, text)
     setDraft('')
+  }
+
+  function cycleStatus(subtask: Todo, reverse: boolean): void {
+    const currentIndex = STATUS_CYCLE.indexOf(subtask.status)
+    let nextIndex = currentIndex + (reverse ? -1 : 1)
+    if (nextIndex < 0) {
+      nextIndex = STATUS_CYCLE.length - 1
+    }
+    window.jot.setStatus(subtask.id, STATUS_CYCLE[nextIndex % STATUS_CYCLE.length])
   }
 
   const doneCount = subtasks.filter((s) => s.status === 'done').length
@@ -41,9 +52,13 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
           return (
             <li key={subtask.id} className="subtask-row">
               <button
-                className={`subtask-checkbox${done ? ' done' : ''}`}
-                title={done ? 'Mark open' : 'Mark done'}
-                onClick={() => window.jot.setStatus(subtask.id, done ? 'open' : 'done')}
+                className={`status-checkbox subtask-checkbox ${subtask.status}`}
+                title={`Status: ${subtask.status} (click to cycle)`}
+                onClick={() => cycleStatus(subtask, false)}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  cycleStatus(subtask, true)
+                }}
               />
               <span
                 className={`subtask-text${done ? ' done' : ''}`}
