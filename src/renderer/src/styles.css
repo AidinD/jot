@@ -1400,20 +1400,12 @@ body {
   background: var(--surface-hover);
 }
 
+/* Sizes down the shared .status-checkbox for a nested checklist row; the
+   status colors (in-progress/review/done, including the ::after glyph) still
+   come from .status-checkbox's own rules. */
 .subtask-checkbox {
   width: 14px;
   height: 14px;
-  border-radius: 4px;
-  border: 2px solid var(--text-dim);
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-  padding: 0;
-}
-
-.subtask-checkbox.done {
-  border-color: var(--green);
-  background: var(--green);
 }
 
 .subtask-text {
