@@ -526,6 +526,7 @@ export function App(): JSX.Element {
             <span className="sort-label">Sort</span>
             <SortMenu value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} />
           </div>
+          {selectedCategory !== null ? <FolderControl category={selectedCategory} /> : null}
           <div className="view-toggle">
             <button
               className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
@@ -583,9 +584,6 @@ export function App(): JSX.Element {
           />
 
           <main className="main-pane">
-            {selectedCategory !== null ? (
-              <FolderBar category={selectedCategory} />
-            ) : null}
             <div className="add-area">
               <div className="add-row">
                 <input
@@ -835,11 +833,12 @@ export function App(): JSX.Element {
 }
 
 /**
- * Slim bar at the top of the main pane showing the folder associated with the
- * currently selected list (if any), with a native folder-picker to link or
- * change it, and a way to clear the association.
+ * Compact header control showing the folder associated with the currently
+ * selected list (if any). Lives inline with the other header-actions controls
+ * (search, sort, view toggle) — matches their border/padding/muted-text look
+ * rather than standing out as a colorful one-off.
  */
-function FolderBar({ category }: { category: Category }): JSX.Element {
+function FolderControl({ category }: { category: Category }): JSX.Element {
   const repoPath = category.repoPath ?? null
 
   async function pickAndSet(): Promise<void> {
@@ -851,30 +850,26 @@ function FolderBar({ category }: { category: Category }): JSX.Element {
 
   if (repoPath === null) {
     return (
-      <div className="folder-bar">
-        <span className="folder-bar-empty">No folder linked</span>
-        <button className="link-button" onClick={pickAndSet}>
-          Link folder…
-        </button>
-      </div>
+      <button className="icon-btn" onClick={pickAndSet} title="Link a folder to this list">
+        📁 Link folder
+      </button>
     )
   }
 
   return (
-    <div className="folder-bar">
-      <span className="folder-bar-path" title={repoPath}>
-        📁 {repoPath}
-      </span>
-      <button className="link-button" onClick={pickAndSet}>
-        Change
+    <div className="folder-control" title={repoPath}>
+      <button className="icon-btn folder-control-pick" onClick={pickAndSet} title="Change folder">
+        📁
       </button>
+      <span className="folder-control-path">{repoPath}</span>
       <button
-        className="link-button"
+        className="folder-control-clear"
+        title="Unlink folder"
         onClick={() => {
           window.jot.setCategoryRepoPath(category.id, '')
         }}
       >
-        Clear
+        ×
       </button>
     </div>
   )

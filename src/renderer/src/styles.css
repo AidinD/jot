@@ -233,34 +233,6 @@ body {
   padding-right: 8px;
 }
 
-.folder-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-}
-
-.folder-bar-path {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  color: var(--text-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.folder-bar-empty {
-  flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  color: var(--text-dim);
-  font-style: italic;
-}
-
 .add-area {
   position: relative;
 }
@@ -1045,6 +1017,47 @@ body {
 
 .icon-btn:hover {
   background: var(--surface);
+  color: var(--text);
+}
+
+.folder-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 220px;
+  padding: 3px 6px 3px 3px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.folder-control-pick {
+  padding: 2px 6px;
+  border: none;
+  font-size: 12px;
+}
+
+.folder-control-path {
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-control-clear {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.folder-control-clear:hover {
   color: var(--text);
 }
 
