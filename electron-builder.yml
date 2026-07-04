@@ -17,3 +17,4 @@ publish:
   provider: github
   owner: AidinD
   repo: jot
+  releaseType: release
