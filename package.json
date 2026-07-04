@@ -16,7 +16,8 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "package": "electron-vite build && electron-builder --win"
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "package": "npm run clean && electron-vite build && electron-builder --win"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
