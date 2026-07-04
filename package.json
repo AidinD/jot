@@ -1,6 +1,6 @@
 {
   "name": "jot",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "description": "A keyboard-first quick-capture todo app",
   "main": "./out/main/index.js",
   "author": "Aidin",
@@ -24,7 +24,8 @@
     "@dnd-kit/sortable": "^8.0.0",
     "@dnd-kit/utilities": "^3.2.2",
     "@electron-toolkit/preload": "^3.0.1",
-    "@electron-toolkit/utils": "^3.0.0"
+    "@electron-toolkit/utils": "^3.0.0",
+    "electron-updater": "^6.8.9"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

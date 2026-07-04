@@ -118,3 +118,47 @@ transcript for the step-by-step; this file is only the choices worth revisiting.
 - Why: the installed Windows app is the real day-to-day runtime. Reinstalling
   after each release catches packaging and startup regressions immediately and
   keeps the machine in sync with the latest shipped build.
+
+## 2026-07-04 — Real auto-update via electron-updater
+
+**Added `electron-updater`; `checkForUpdatesAndNotify()` runs on every packaged launch.**
+- Before this, Jot had no updater at all: `latest.yml` was an unused
+  electron-builder byproduct and users had to reinstall manually every time.
+- Wired in `src/main/index.ts` via `initAutoUpdater()`, called from inside
+  `app.whenReady()` after the main window is created.
+- Guarded by `app.isPackaged` so `electron-vite dev` never calls out to GitHub.
+- Lifecycle events (`checking-for-update`, `update-available`,
+  `update-not-available`, `error`, `download-progress`, `update-downloaded`)
+  are logged to the existing `startup.log` via `logStartup()` so failures are
+  visible without adding a new logging path.
+- The default `checkForUpdatesAndNotify()` behavior (native notification on
+  download, install on quit) is kept as-is; no forced immediate restart.
+
+**Publish config added to `electron-builder.yml`: `provider: github`, `owner: AidinD`, `repo: jot`.**
+- This is what electron-builder needs to generate a correct `latest.yml` and
+  what electron-updater reads to find new releases.
+
+**Release-naming gotcha: releases MUST be published via `electron-builder --publish`, never a manual `gh release create` upload.**
+- `latest.yml` always references the installer with a DASHED filename, e.g.
+  `Jot-Setup-1.5.7.exe`.
+- A plain `npm run package` produces the installer with SPACES in the name
+  (`Jot Setup 1.5.7.exe`), confirmed when packaging 1.5.7 locally.
+- A manual `gh release create` upload commonly renames the asset with DOTS
+  (`Jot.Setup.1.5.7.exe`) instead.
+- Neither matches the dashed name in `latest.yml`, so electron-updater's
+  download step silently fails (404 on the asset) even though the release
+  "looks" published.
+- The robust fix is `electron-builder --publish always` (or `onTagOrDraft`),
+  which uploads the asset already renamed to match what it wrote into
+  `latest.yml`. Do not hand-craft the GitHub release for a Jot version bump.
+
+**Unsigned app: auto-update still works, first manual install still triggers SmartScreen.**
+- electron-updater does not require code signing for NSIS auto-updates on
+  Windows, so this is not blocking.
+- The SmartScreen "Windows protected your PC" warning on first manual install
+  is unrelated to auto-update and remains a known rough edge.
+- Auto-update only takes effect going forward: any Jot install from before this
+  change (no updater code at all, e.g. 1.5.4/1.5.5) cannot self-update to 1.5.7
+  or beyond. The 1.5.7 installer must be installed manually one last time;
+  every release after that can auto-update normally as long as it is published
+  via `electron-builder --publish`.
