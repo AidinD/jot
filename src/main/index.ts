@@ -228,6 +228,17 @@ function registerIpc(): void {
   ipcMain.handle('categories:setRepoPath', (_event, id: string, repoPath: string) => {
     return store.setCategoryRepoPath(id, repoPath)
   })
+  ipcMain.handle('dialog:pickFolder', async (_event, defaultPath?: string) => {
+    const options = { properties: ['openDirectory' as const], defaultPath }
+    const result =
+      mainWindow !== null
+        ? await dialog.showOpenDialog(mainWindow, options)
+        : await dialog.showOpenDialog(options)
+    if (result.canceled || result.filePaths.length === 0) {
+      return null
+    }
+    return result.filePaths[0]
+  })
   ipcMain.handle('categories:remove', (_event, id: string) => {
     return store.removeCategory(id)
   })

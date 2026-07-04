@@ -94,7 +94,6 @@ export function App(): JSX.Element {
   const [draft, setDraft] = useState('')
   const [addSuggestionIndex, setAddSuggestionIndex] = useState(0)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editingPathId, setEditingPathId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const [viewMode, setViewMode] = useState<'list' | 'board'>(
@@ -170,6 +169,15 @@ export function App(): JSX.Element {
     if (!categoriesById.has(filter)) {
       setFilter('all')
     }
+  }, [filter, categoriesById])
+
+  // The folder bar only shows when a single real list is selected — not for
+  // the "all" or "uncategorized" pseudo-filters.
+  const selectedCategory = useMemo(() => {
+    if (filter === 'all' || filter === 'uncategorized') {
+      return null
+    }
+    return categoriesById.get(filter) ?? null
   }, [filter, categoriesById])
 
   // Subtasks live tucked under their parent (see subtasksByParent) and never
@@ -567,19 +575,17 @@ export function App(): JSX.Element {
             onRenameCategory={(id, name) => {
               window.jot.renameCategory(id, name)
             }}
-            onSetRepoPath={(id, repoPath) => {
-              window.jot.setCategoryRepoPath(id, repoPath)
-            }}
             onRemoveCategory={(id) => {
               setPendingDeleteCatId(id)
             }}
             editingId={editingId}
             setEditingId={setEditingId}
-            editingPathId={editingPathId}
-            setEditingPathId={setEditingPathId}
           />
 
           <main className="main-pane">
+            {selectedCategory !== null ? (
+              <FolderBar category={selectedCategory} />
+            ) : null}
             <div className="add-area">
               <div className="add-row">
                 <input
@@ -824,6 +830,52 @@ export function App(): JSX.Element {
       {tagManagerOpen ? (
         <TagManager tags={state.tags} onClose={() => setTagManagerOpen(false)} />
       ) : null}
+    </div>
+  )
+}
+
+/**
+ * Slim bar at the top of the main pane showing the folder associated with the
+ * currently selected list (if any), with a native folder-picker to link or
+ * change it, and a way to clear the association.
+ */
+function FolderBar({ category }: { category: Category }): JSX.Element {
+  const repoPath = category.repoPath ?? null
+
+  async function pickAndSet(): Promise<void> {
+    const chosen = await window.jot.pickFolder(repoPath ?? undefined)
+    if (chosen) {
+      window.jot.setCategoryRepoPath(category.id, chosen)
+    }
+  }
+
+  if (repoPath === null) {
+    return (
+      <div className="folder-bar">
+        <span className="folder-bar-empty">No folder linked</span>
+        <button className="link-button" onClick={pickAndSet}>
+          Link folder…
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="folder-bar">
+      <span className="folder-bar-path" title={repoPath}>
+        📁 {repoPath}
+      </span>
+      <button className="link-button" onClick={pickAndSet}>
+        Change
+      </button>
+      <button
+        className="link-button"
+        onClick={() => {
+          window.jot.setCategoryRepoPath(category.id, '')
+        }}
+      >
+        Clear
+      </button>
     </div>
   )
 }

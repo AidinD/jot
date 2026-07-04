@@ -64,6 +64,9 @@ const jotApi = {
   setCategoryRepoPath: (id: string, repoPath: string): Promise<void> => {
     return ipcRenderer.invoke('categories:setRepoPath', id, repoPath)
   },
+  pickFolder: (defaultPath?: string): Promise<string | null> => {
+    return ipcRenderer.invoke('dialog:pickFolder', defaultPath)
+  },
   removeCategory: (id: string): Promise<void> => {
     return ipcRenderer.invoke('categories:remove', id)
   },

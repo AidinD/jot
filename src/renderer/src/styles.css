@@ -171,16 +171,6 @@ body {
   color: var(--text);
 }
 
-/* A folder-association action stays faintly visible (not hover-gated) when a
-   path is set, so a list's link to a repo is discoverable at a glance. */
-.side-action.set {
-  opacity: 0.55;
-}
-
-.side-row.category:hover .side-action.set {
-  opacity: 1;
-}
-
 .cat-dot {
   width: 10px;
   height: 10px;
@@ -241,6 +231,34 @@ body {
   min-width: 0;
   overflow-y: auto;
   padding-right: 8px;
+}
+
+.folder-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.folder-bar-path {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.folder-bar-empty {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  font-style: italic;
 }
 
 .add-area {
