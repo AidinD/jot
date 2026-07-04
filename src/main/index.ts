@@ -2,7 +2,12 @@ import { appendFileSync } from 'fs'
 import { join } from 'path'
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray, dialog } from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { autoUpdater } from 'electron-updater'
+// electron-updater is CommonJS; a named ESM import ("import { autoUpdater }")
+// fails at runtime in the packaged app (main is built as ESM). Import the
+// default export and destructure - the pattern electron-vite documents for
+// CJS deps. This crashed 1.5.7 on launch; keep it as a default import.
+import electronUpdater from 'electron-updater'
+const { autoUpdater } = electronUpdater
 import { LocalJsonStorage } from './storage'
 import { TodoStore } from './store'
 import { resolveDataDir, migrateLegacyData } from './data-dir'
