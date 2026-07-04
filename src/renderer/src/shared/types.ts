@@ -22,6 +22,11 @@ export interface Category {
   name: string
   color: string
   createdAt: number
+  // Optional absolute path to the repo/folder this list belongs to. When set,
+  // external consumers (e.g. Maestro) can map a session's working directory to
+  // this list deterministically, instead of fuzzy-matching on the list name.
+  // Undefined/empty means "no associated folder".
+  repoPath?: string
 }
 
 /**
@@ -74,6 +79,7 @@ export interface JotApi {
   archiveCompleted: () => Promise<number>
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
+  setCategoryRepoPath: (id: string, repoPath: string) => Promise<void>
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>
   addTag: (name: string, color: string, description: string) => Promise<string>

@@ -94,6 +94,7 @@ export function App(): JSX.Element {
   const [draft, setDraft] = useState('')
   const [addSuggestionIndex, setAddSuggestionIndex] = useState(0)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingPathId, setEditingPathId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const [viewMode, setViewMode] = useState<'list' | 'board'>(
@@ -566,11 +567,16 @@ export function App(): JSX.Element {
             onRenameCategory={(id, name) => {
               window.jot.renameCategory(id, name)
             }}
+            onSetRepoPath={(id, repoPath) => {
+              window.jot.setCategoryRepoPath(id, repoPath)
+            }}
             onRemoveCategory={(id) => {
               setPendingDeleteCatId(id)
             }}
             editingId={editingId}
             setEditingId={setEditingId}
+            editingPathId={editingPathId}
+            setEditingPathId={setEditingPathId}
           />
 
           <main className="main-pane">

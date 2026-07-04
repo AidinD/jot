@@ -86,8 +86,14 @@ Jot accepts both:
   name: string
   color: string
   createdAt: number
+  repoPath?: string // optional absolute folder path this list is associated with
 }
 ```
+
+`repoPath` is optional. When present it is an absolute path to the repo/folder
+the list belongs to, letting an external consumer map a working directory to a
+list deterministically instead of fuzzy-matching on the list name. Absent (or
+empty) means no association.
 
 ## Safe write flow
 
