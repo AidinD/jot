@@ -171,6 +171,16 @@ body {
   color: var(--text);
 }
 
+/* A folder-association action stays faintly visible (not hover-gated) when a
+   path is set, so a list's link to a repo is discoverable at a glance. */
+.side-action.set {
+  opacity: 0.55;
+}
+
+.side-row.category:hover .side-action.set {
+  opacity: 1;
+}
+
 .cat-dot {
   width: 10px;
   height: 10px;

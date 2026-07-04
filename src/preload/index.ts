@@ -61,6 +61,9 @@ const jotApi = {
   renameCategory: (id: string, name: string): Promise<void> => {
     return ipcRenderer.invoke('categories:rename', id, name)
   },
+  setCategoryRepoPath: (id: string, repoPath: string): Promise<void> => {
+    return ipcRenderer.invoke('categories:setRepoPath', id, repoPath)
+  },
   removeCategory: (id: string): Promise<void> => {
     return ipcRenderer.invoke('categories:remove', id)
   },

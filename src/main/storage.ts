@@ -1,7 +1,7 @@
 import { promises as fs, watch as watchFs } from 'fs'
 import { basename, dirname, join } from 'path'
 import { resolveDataDir } from './data-dir'
-import type { JotState, Tag, Todo, TodoStatus } from '../renderer/src/shared/types'
+import type { Category, JotState, Tag, Todo, TodoStatus } from '../renderer/src/shared/types'
 
 // Seeded once, the first time a pre-tags file is loaded (when `tags` is absent).
 // Fixed ids so re-seeding never duplicates. The user can edit/delete/add freely.
@@ -64,6 +64,21 @@ function normalizeTodo(raw: any): Todo {
   }
 }
 
+function normalizeCategory(raw: any): Category {
+  const category: Category = {
+    id: String(raw.id),
+    name: repairDoubleEncoding(String(raw.name ?? '')),
+    color: String(raw.color ?? '#9a9da3'),
+    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now()
+  }
+  // Optional associated repo/folder path. Only carried when it's a non-empty
+  // string, so a cleared association never lingers as an empty field.
+  if (typeof raw.repoPath === 'string' && raw.repoPath.trim().length > 0) {
+    category.repoPath = raw.repoPath
+  }
+  return category
+}
+
 function normalizeTag(raw: any): Tag {
   return {
     id: String(raw.id),
@@ -89,9 +104,7 @@ function migrate(parsed: unknown): JotState {
     const state = parsed as Partial<JotState>
     return {
       todos: Array.isArray(state.todos) ? state.todos.map(normalizeTodo) : [],
-      categories: Array.isArray(state.categories)
-        ? state.categories.map((c) => ({ ...c, name: repairDoubleEncoding(String(c.name ?? '')) }))
-        : [],
+      categories: Array.isArray(state.categories) ? state.categories.map(normalizeCategory) : [],
       // Absent `tags` means a pre-tags file → seed defaults. An existing array
       // (even empty) is respected, so deleting all tags sticks.
       tags: Array.isArray(state.tags) ? state.tags.map(normalizeTag) : DEFAULT_TAGS

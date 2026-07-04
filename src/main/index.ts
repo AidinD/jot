@@ -225,6 +225,9 @@ function registerIpc(): void {
   ipcMain.handle('categories:rename', (_event, id: string, name: string) => {
     return store.renameCategory(id, name)
   })
+  ipcMain.handle('categories:setRepoPath', (_event, id: string, repoPath: string) => {
+    return store.setCategoryRepoPath(id, repoPath)
+  })
   ipcMain.handle('categories:remove', (_event, id: string) => {
     return store.removeCategory(id)
   })

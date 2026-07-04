@@ -382,6 +382,29 @@ export class TodoStore {
   }
 
   /**
+   * Set (or clear) the absolute folder path a list is associated with. An empty
+   * or whitespace-only path clears the association (field is dropped). This is
+   * what lets external consumers map a session's working directory to a list
+   * deterministically instead of fuzzy name-matching.
+   */
+  async setCategoryRepoPath(id: string, repoPath: string): Promise<void> {
+    const trimmed = repoPath.trim()
+    this.state.categories = this.state.categories.map((category) => {
+      if (category.id !== id) {
+        return category
+      }
+      if (trimmed.length === 0) {
+        // Drop the field entirely rather than store an empty string, so a
+        // cleared association is indistinguishable from one never set.
+        const { repoPath: _dropped, ...rest } = category
+        return rest
+      }
+      return { ...category, repoPath: trimmed }
+    })
+    await this.persist()
+  }
+
+  /**
    * Remove a category AND delete every todo filed under it. This is
    * destructive — the renderer must confirm with the user first (see the
    * delete-list warning prompt in Sidebar).
