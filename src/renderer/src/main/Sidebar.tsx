@@ -17,12 +17,9 @@ interface SidebarProps {
   onFilter: (filter: string) => void
   onAddCategory: (name: string) => void
   onRenameCategory: (id: string, name: string) => void
-  onSetRepoPath: (id: string, repoPath: string) => void
   onRemoveCategory: (id: string) => void
   editingId: string | null
   setEditingId: (id: string | null) => void
-  editingPathId: string | null
-  setEditingPathId: (id: string | null) => void
 }
 
 export function Sidebar({
@@ -32,12 +29,9 @@ export function Sidebar({
   onFilter,
   onAddCategory,
   onRenameCategory,
-  onSetRepoPath,
   onRemoveCategory,
   editingId,
-  setEditingId,
-  editingPathId,
-  setEditingPathId
+  setEditingId
 }: SidebarProps): JSX.Element {
   return (
     <aside className="sidebar">
@@ -69,7 +63,6 @@ export function Sidebar({
               count={counts.byCategory[category.id] ?? 0}
               active={filter === category.id}
               editing={editingId === category.id}
-              editingPath={editingPathId === category.id}
               onClick={() => {
                 onFilter(category.id)
               }}
@@ -82,16 +75,6 @@ export function Sidebar({
               }}
               onCancelEdit={() => {
                 setEditingId(null)
-              }}
-              onStartEditPath={() => {
-                setEditingPathId(category.id)
-              }}
-              onSetPath={(repoPath) => {
-                onSetRepoPath(category.id, repoPath)
-                setEditingPathId(null)
-              }}
-              onCancelEditPath={() => {
-                setEditingPathId(null)
               }}
               onRemove={() => {
                 onRemoveCategory(category.id)
@@ -154,28 +137,20 @@ function CategoryRow({
   count,
   active,
   editing,
-  editingPath,
   onClick,
   onStartEdit,
   onRename,
   onCancelEdit,
-  onStartEditPath,
-  onSetPath,
-  onCancelEditPath,
   onRemove
 }: {
   category: Category
   count: number
   active: boolean
   editing: boolean
-  editingPath: boolean
   onClick: () => void
   onStartEdit: () => void
   onRename: (name: string) => void
   onCancelEdit: () => void
-  onStartEditPath: () => void
-  onSetPath: (repoPath: string) => void
-  onCancelEditPath: () => void
   onRemove: () => void
 }): JSX.Element {
   const { setNodeRef: setSortableNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: `cat:${category.id}`, data: { type: 'category' } })
@@ -190,9 +165,7 @@ function CategoryRow({
   const isOver =
     draggingTodo && (over?.id === `cat:${category.id}` || over?.id === `drop:cat:${category.id}`)
   const [draft, setDraft] = useState(category.name)
-  const [pathDraft, setPathDraft] = useState(category.repoPath ?? '')
   const inputRef = useRef<HTMLInputElement>(null)
-  const pathInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (editing) {
@@ -205,16 +178,6 @@ function CategoryRow({
       })
     }
   }, [editing, category.name])
-
-  useEffect(() => {
-    if (editingPath) {
-      setPathDraft(category.repoPath ?? '')
-      requestAnimationFrame(() => {
-        pathInputRef.current?.focus()
-        pathInputRef.current?.select()
-      })
-    }
-  }, [editingPath, category.repoPath])
 
   const className = `side-row category${active ? ' active' : ''}${isOver ? ' drop-over' : ''}${isDragging ? ' dragging' : ''}`
   const style = {
@@ -255,36 +218,6 @@ function CategoryRow({
     )
   }
 
-  if (editingPath) {
-    return (
-      <div ref={setRefs} style={style} className={className}>
-        <span className="cat-dot" style={{ background: category.color }} />
-        <input
-          ref={pathInputRef}
-          className="cat-edit-input"
-          placeholder="Associated folder (absolute path)…"
-          value={pathDraft}
-          onChange={(event) => {
-            setPathDraft(event.target.value)
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              onSetPath(pathDraft)
-            }
-            if (event.key === 'Escape') {
-              onCancelEditPath()
-            }
-          }}
-          onBlur={() => {
-            onSetPath(pathDraft)
-          }}
-        />
-      </div>
-    )
-  }
-
-  const hasRepoPath = typeof category.repoPath === 'string' && category.repoPath.length > 0
-
   return (
     <div ref={setRefs} style={style} className={className}>
       <button className="side-main" onClick={onClick} onDoubleClick={onStartEdit} {...attributes} {...listeners}>
@@ -294,13 +227,6 @@ function CategoryRow({
       <span className="side-count">{count}</span>
       <button className="side-action" title="Rename" onClick={onStartEdit}>
         ✎
-      </button>
-      <button
-        className={hasRepoPath ? 'side-action set' : 'side-action'}
-        title={hasRepoPath ? `Associated folder: ${category.repoPath}` : 'Set associated folder'}
-        onClick={onStartEditPath}
-      >
-        📁
       </button>
       <button className="side-action" title="Delete list" onClick={onRemove}>
         ×

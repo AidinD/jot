@@ -80,6 +80,7 @@ export interface JotApi {
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   setCategoryRepoPath: (id: string, repoPath: string) => Promise<void>
+  pickFolder: (defaultPath?: string) => Promise<string | null>
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>
   addTag: (name: string, color: string, description: string) => Promise<string>
