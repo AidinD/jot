@@ -2,6 +2,7 @@ import { appendFileSync } from 'fs'
 import { join } from 'path'
 import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray, dialog } from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import { LocalJsonStorage } from './storage'
 import { TodoStore } from './store'
 import { resolveDataDir, migrateLegacyData } from './data-dir'
@@ -25,6 +26,37 @@ function logStartup(message: string): void {
   } catch {
     // Logging must never block startup.
   }
+}
+
+function initAutoUpdater(): void {
+  // Only packaged installs have a real release channel to update against.
+  // Running `electron-vite dev` should never reach out to GitHub.
+  if (!app.isPackaged) {
+    return
+  }
+
+  autoUpdater.on('checking-for-update', () => {
+    logStartup('autoUpdater: checking for update')
+  })
+  autoUpdater.on('update-available', (info) => {
+    logStartup(`autoUpdater: update available ${info.version}`)
+  })
+  autoUpdater.on('update-not-available', (info) => {
+    logStartup(`autoUpdater: no update available (current ${info.version})`)
+  })
+  autoUpdater.on('error', (error) => {
+    logStartup(`autoUpdater: error ${String(error)}`)
+  })
+  autoUpdater.on('download-progress', (progress) => {
+    logStartup(`autoUpdater: downloading ${Math.round(progress.percent)}%`)
+  })
+  autoUpdater.on('update-downloaded', (info) => {
+    logStartup(`autoUpdater: update downloaded ${info.version}, will install on quit`)
+  })
+
+  autoUpdater.checkForUpdatesAndNotify().catch((error) => {
+    logStartup(`autoUpdater: checkForUpdatesAndNotify failed ${String(error)}`)
+  })
 }
 
 process.on('uncaughtException', (error) => {
@@ -316,6 +348,8 @@ app.whenReady().then(async () => {
     initAutoLaunch()
     buildTray()
     logStartup('tray built')
+
+    initAutoUpdater()
 
     const registered = globalShortcut.register(CAPTURE_SHORTCUT, () => {
       console.log(`[shortcut] ${CAPTURE_SHORTCUT} fired`)
