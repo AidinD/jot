@@ -87,6 +87,7 @@ Jot accepts both:
   color: string
   createdAt: number
   repoPath?: string // optional absolute folder path this list is associated with
+  domain?: 'work' | 'private' // optional work/private classification for this list
 }
 ```
 
@@ -94,6 +95,11 @@ Jot accepts both:
 the list belongs to, letting an external consumer map a working directory to a
 list deterministically instead of fuzzy-matching on the list name. Absent (or
 empty) means no association.
+
+`domain` is optional. When present it is `'work'` or `'private'`, letting an
+external consumer (e.g. Maestro's Focus mode) read a list's classification
+directly instead of guessing it from the list name. Absent means no domain is
+set for that list.
 
 ## Safe write flow
 

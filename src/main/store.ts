@@ -405,6 +405,25 @@ export class TodoStore {
   }
 
   /**
+   * Set (or clear) the work/private domain a list is classified as. `null` (or
+   * any value other than 'work'/'private') clears the field entirely, so "no
+   * domain" is one canonical state rather than a lingering invalid value.
+   */
+  async setCategoryDomain(id: string, domain: 'work' | 'private' | null): Promise<void> {
+    this.state.categories = this.state.categories.map((category) => {
+      if (category.id !== id) {
+        return category
+      }
+      if (domain !== 'work' && domain !== 'private') {
+        const { domain: _dropped, ...rest } = category
+        return rest
+      }
+      return { ...category, domain }
+    })
+    await this.persist()
+  }
+
+  /**
    * Remove a category AND delete every todo filed under it. This is
    * destructive — the renderer must confirm with the user first (see the
    * delete-list warning prompt in Sidebar).

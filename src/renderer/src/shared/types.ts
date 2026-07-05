@@ -27,6 +27,10 @@ export interface Category {
   // this list deterministically, instead of fuzzy-matching on the list name.
   // Undefined/empty means "no associated folder".
   repoPath?: string
+  // Optional work/private classification for this list. When set, external
+  // consumers (e.g. Maestro's Focus mode) can read the list's domain directly
+  // instead of guessing it from the list name. Undefined means "no domain".
+  domain?: 'work' | 'private'
 }
 
 /**
@@ -80,6 +84,7 @@ export interface JotApi {
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   setCategoryRepoPath: (id: string, repoPath: string) => Promise<void>
+  setCategoryDomain: (id: string, domain: 'work' | 'private' | null) => Promise<void>
   pickFolder: (defaultPath?: string) => Promise<string | null>
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>

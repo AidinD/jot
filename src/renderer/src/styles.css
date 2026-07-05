@@ -191,6 +191,28 @@ body {
   flex-shrink: 0;
 }
 
+/* Subtle work/private classifier chip. Hidden until hover like the other row
+   actions, except once a domain is set it stays visible (muted, not loud) so
+   the list's classification is still readable at a glance. */
+.domain-chip {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  min-width: 14px;
+}
+
+.side-row.category:hover .domain-chip {
+  opacity: 1;
+}
+
+.domain-chip-set {
+  opacity: 0.6;
+}
+
+.side-row.category:hover .domain-chip-set {
+  opacity: 1;
+}
+
 .cat-edit-input {
   flex: 1;
   min-width: 0;
