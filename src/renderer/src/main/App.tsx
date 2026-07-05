@@ -589,9 +589,15 @@ export function App(): JSX.Element {
             onRemoveCategory={(id) => {
               setPendingDeleteCatId(id)
             }}
-            onCycleCategoryDomain={(id, current) => {
-              const next = current === 'work' ? 'private' : current === 'private' ? null : 'work'
-              window.jot.setCategoryDomain(id, next)
+            onCycleCategoryDomain={(id, current, back) => {
+              // Forward (left-click): none -> private -> work -> none. Private
+              // first because it's the common case for a personal todo app.
+              // Backward (right-click): the exact reverse.
+              const forward =
+                current === 'private' ? 'work' : current === 'work' ? null : 'private'
+              const backward =
+                current === 'work' ? 'private' : current === 'private' ? null : 'work'
+              window.jot.setCategoryDomain(id, back ? backward : forward)
             }}
             editingId={editingId}
             setEditingId={setEditingId}

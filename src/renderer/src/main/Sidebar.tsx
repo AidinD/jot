@@ -18,7 +18,11 @@ interface SidebarProps {
   onAddCategory: (name: string) => void
   onRenameCategory: (id: string, name: string) => void
   onRemoveCategory: (id: string) => void
-  onCycleCategoryDomain: (id: string, current: 'work' | 'private' | undefined) => void
+  onCycleCategoryDomain: (
+    id: string,
+    current: 'work' | 'private' | undefined,
+    back: boolean
+  ) => void
   editingId: string | null
   setEditingId: (id: string | null) => void
 }
@@ -81,8 +85,8 @@ export function Sidebar({
               onRemove={() => {
                 onRemoveCategory(category.id)
               }}
-              onCycleDomain={() => {
-                onCycleCategoryDomain(category.id, category.domain)
+              onCycleDomain={(back) => {
+                onCycleCategoryDomain(category.id, category.domain, back)
               }}
             />
           )
@@ -158,7 +162,7 @@ function CategoryRow({
   onRename: (name: string) => void
   onCancelEdit: () => void
   onRemove: () => void
-  onCycleDomain: () => void
+  onCycleDomain: (back: boolean) => void
 }): JSX.Element {
   const { setNodeRef: setSortableNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({ id: `cat:${category.id}`, data: { type: 'category' } })
   const { setNodeRef: setDroppableNodeRef } = useDroppable({ id: `drop:cat:${category.id}` })
@@ -232,7 +236,7 @@ function CategoryRow({
         <span className="side-label">{category.name}</span>
       </button>
       <span className="side-count">{count}</span>
-      <DomainChip domain={category.domain} onClick={onCycleDomain} />
+      <DomainChip domain={category.domain} onCycle={onCycleDomain} />
       <button className="side-action" title="Rename" onClick={onStartEdit}>
         ✎
       </button>
@@ -244,28 +248,38 @@ function CategoryRow({
 }
 
 /**
- * Subtle per-list work/private classifier. Cycles work -> private -> neutral
- * on click. Deliberately understated: a small text chip, no color when unset
- * (matching the other row actions' hover-to-reveal treatment), and only a
- * muted tint (not a loud badge color) once a domain is chosen.
+ * Subtle per-list work/private classifier. Left-click cycles forward
+ * none -> private -> work -> none (Private first: it's the common case for a
+ * personal todo app); right-click cycles backward. Deliberately understated:
+ * a small text chip, no color when unset (matching the other row actions'
+ * hover-to-reveal treatment), and only a muted tint (not a loud badge color)
+ * once a domain is chosen.
  */
 function DomainChip({
   domain,
-  onClick
+  onCycle
 }: {
   domain: 'work' | 'private' | undefined
-  onClick: () => void
+  onCycle: (back: boolean) => void
 }): JSX.Element {
   const label = domain === 'work' ? 'W' : domain === 'private' ? 'P' : '—'
   const title =
-    domain === 'work'
-      ? 'Domain: Work (click for Private)'
-      : domain === 'private'
-        ? 'Domain: Private (click to clear)'
-        : 'Domain: none (click to set Work)'
+    domain === 'private'
+      ? 'Domain: Private (click for Work, right-click to clear)'
+      : domain === 'work'
+        ? 'Domain: Work (click to clear, right-click for Private)'
+        : 'Domain: none (click to set Private, right-click for Work)'
   const className = `side-action domain-chip${domain !== undefined ? ' domain-chip-set' : ''}`
   return (
-    <button className={className} title={title} onClick={onClick}>
+    <button
+      className={className}
+      title={title}
+      onClick={() => onCycle(false)}
+      onContextMenu={(e) => {
+        e.preventDefault()
+        onCycle(true)
+      }}
+    >
       {label}
     </button>
   )
