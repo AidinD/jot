@@ -23,6 +23,8 @@ interface SidebarProps {
     current: 'work' | 'private' | undefined,
     back: boolean
   ) => void
+  domainFilter: 'all' | 'work' | 'private'
+  onDomainFilterChange: (d: 'all' | 'work' | 'private') => void
   editingId: string | null
   setEditingId: (id: string | null) => void
 }
@@ -36,9 +38,17 @@ export function Sidebar({
   onRenameCategory,
   onRemoveCategory,
   onCycleCategoryDomain,
+  domainFilter,
+  onDomainFilterChange,
   editingId,
   setEditingId
 }: SidebarProps): JSX.Element {
+  // Focus filter: show only lists whose domain matches (neutral/unset lists
+  // always show, mirroring Maestro's Focus filter). "all" shows everything.
+  const visibleCategories =
+    domainFilter === 'all'
+      ? categories
+      : categories.filter((c) => !c.domain || c.domain === domainFilter)
   return (
     <aside className="sidebar">
       <PlainRow
@@ -60,8 +70,21 @@ export function Sidebar({
       />
 
       <div className="sidebar-heading">Lists</div>
-      <SortableContext items={categories.map((c) => `cat:${c.id}`)} strategy={verticalListSortingStrategy}>
-        {categories.map((category) => {
+      <div className="sidebar-domain-filter" role="group" aria-label="Filter lists by domain">
+        {(['all', 'work', 'private'] as const).map((d) => (
+          <button
+            key={d}
+            className={'sidebar-domain-btn' + (domainFilter === d ? ' active' : '')}
+            onClick={() => {
+              onDomainFilterChange(d)
+            }}
+          >
+            {d === 'all' ? 'All' : d === 'work' ? 'Work' : 'Private'}
+          </button>
+        ))}
+      </div>
+      <SortableContext items={visibleCategories.map((c) => `cat:${c.id}`)} strategy={verticalListSortingStrategy}>
+        {visibleCategories.map((category) => {
           return (
             <CategoryRow
               key={category.id}

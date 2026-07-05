@@ -103,6 +103,30 @@ body {
   color: var(--text-dim);
 }
 
+/* Focus filter (All / Work / Private) - subtle, color only on the active one. */
+.sidebar-domain-filter {
+  display: flex;
+  gap: 2px;
+  margin: 0 2px 6px;
+}
+.sidebar-domain-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 4px;
+  border-radius: 5px;
+}
+.sidebar-domain-btn:hover {
+  color: var(--text);
+}
+.sidebar-domain-btn.active {
+  color: var(--text);
+  background: rgba(127, 127, 127, 0.14);
+}
+
 .side-row {
   display: flex;
   align-items: center;
