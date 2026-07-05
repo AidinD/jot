@@ -33,6 +33,8 @@ interface JotBridge {
   removeTag: (id: string) => Promise<void>
   setTodoTags: (todoId: string, tagIds: string[]) => Promise<void>
   onChanged: (callback: (state: JotState) => void) => () => void
+  onUpdateReady: (callback: (version: string) => void) => () => void
+  installUpdate: () => void
 }
 
 interface CaptureBridge {
