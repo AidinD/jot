@@ -25,6 +25,7 @@ interface JotBridge {
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   setCategoryRepoPath: (id: string, repoPath: string) => Promise<void>
+  setCategoryDomain: (id: string, domain: 'work' | 'private' | null) => Promise<void>
   pickFolder: (defaultPath?: string) => Promise<string | null>
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>

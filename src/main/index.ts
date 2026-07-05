@@ -268,6 +268,9 @@ function registerIpc(): void {
   ipcMain.handle('categories:setRepoPath', (_event, id: string, repoPath: string) => {
     return store.setCategoryRepoPath(id, repoPath)
   })
+  ipcMain.handle('categories:setDomain', (_event, id: string, domain: 'work' | 'private' | null) => {
+    return store.setCategoryDomain(id, domain)
+  })
   ipcMain.handle('dialog:pickFolder', async (_event, defaultPath?: string) => {
     const options = { properties: ['openDirectory' as const], defaultPath }
     const result =

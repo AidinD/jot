@@ -76,6 +76,11 @@ function normalizeCategory(raw: any): Category {
   if (typeof raw.repoPath === 'string' && raw.repoPath.trim().length > 0) {
     category.repoPath = raw.repoPath
   }
+  // Optional work/private domain. Only carried when it's one of the two valid
+  // strings, so an invalid or cleared value never lingers as a stray field.
+  if (raw.domain === 'work' || raw.domain === 'private') {
+    category.domain = raw.domain
+  }
   return category
 }
 

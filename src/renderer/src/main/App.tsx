@@ -589,6 +589,10 @@ export function App(): JSX.Element {
             onRemoveCategory={(id) => {
               setPendingDeleteCatId(id)
             }}
+            onCycleCategoryDomain={(id, current) => {
+              const next = current === 'work' ? 'private' : current === 'private' ? null : 'work'
+              window.jot.setCategoryDomain(id, next)
+            }}
             editingId={editingId}
             setEditingId={setEditingId}
           />
