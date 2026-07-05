@@ -96,6 +96,18 @@ const jotApi = {
     return () => {
       ipcRenderer.removeListener('state:changed', handler)
     }
+  },
+  onUpdateReady: (callback: (version: string) => void): (() => void) => {
+    const handler = (_event: unknown, version: string): void => {
+      callback(version)
+    }
+    ipcRenderer.on('update:ready', handler)
+    return () => {
+      ipcRenderer.removeListener('update:ready', handler)
+    }
+  },
+  installUpdate: (): void => {
+    ipcRenderer.send('update:install')
   }
 }
 

@@ -57,6 +57,9 @@ function initAutoUpdater(): void {
   })
   autoUpdater.on('update-downloaded', (info) => {
     logStartup(`autoUpdater: update downloaded ${info.version}, will install on quit`)
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send('update:ready', info.version)
+    }
   })
 
   autoUpdater.checkForUpdatesAndNotify().catch((error) => {
@@ -317,6 +320,10 @@ function registerIpc(): void {
     if (captureWindow !== null) {
       captureWindow.hide()
     }
+  })
+
+  ipcMain.on('update:install', () => {
+    autoUpdater.quitAndInstall()
   })
 }
 

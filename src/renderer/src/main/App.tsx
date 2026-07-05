@@ -109,6 +109,7 @@ export function App(): JSX.Element {
   const [searchQuery, setSearchQuery] = useState('')
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [updateVersion, setUpdateVersion] = useState<string | null>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -145,6 +146,13 @@ export function App(): JSX.Element {
     const timer = setTimeout(() => setToast(null), 2000)
     return () => clearTimeout(timer)
   }, [toast])
+
+  useEffect(() => {
+    const unsubscribe = window.jot.onUpdateReady((version) => {
+      setUpdateVersion(version)
+    })
+    return unsubscribe
+  }, [])
 
   const categoriesById = useMemo(() => {
     const map = new Map<string, Category>()
@@ -807,6 +815,25 @@ export function App(): JSX.Element {
         </DragOverlay>
 
         {toast !== null ? <div className="copy-toast">{toast}</div> : null}
+
+        {updateVersion !== null ? (
+          <div className="update-toast">
+            <span className="update-toast-text">Update ready (v{updateVersion})</span>
+            <button
+              className="update-toast-action"
+              onClick={() => window.jot.installUpdate()}
+            >
+              Restart to update
+            </button>
+            <button
+              className="update-toast-dismiss"
+              title="Dismiss"
+              onClick={() => setUpdateVersion(null)}
+            >
+              ×
+            </button>
+          </div>
+        ) : null}
       </DndContext>
 
       {pendingDeleteCat !== null ? (
