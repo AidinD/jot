@@ -24,8 +24,8 @@ function loadRoute(window: BrowserWindow, htmlFile: string): void {
 
 export function createMainWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    width: 980,
-    height: 760,
+    width: 1960,
+    height: 1520,
     minWidth: 760,
     minHeight: 560,
     show: false,

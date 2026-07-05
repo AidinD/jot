@@ -44,6 +44,12 @@ body {
   justify-content: space-between;
 }
 
+.app-header-left {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+
 .app-header h1 {
   margin: 0;
   font-size: 20px;
@@ -1023,17 +1029,16 @@ body {
 .folder-control {
   display: flex;
   align-items: center;
-  gap: 4px;
-  max-width: 220px;
-  padding: 3px 6px 3px 3px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: transparent;
+  gap: 6px;
+  max-width: 320px;
 }
 
 .folder-control-pick {
-  padding: 2px 6px;
-  border: none;
+  flex-shrink: 0;
+  font-size: 12px;
+}
+
+.folder-control-link {
   font-size: 12px;
 }
 

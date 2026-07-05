@@ -501,9 +501,12 @@ export function App(): JSX.Element {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>
-          Jot <span className="version">v{__APP_VERSION__}</span>
-        </h1>
+        <div className="app-header-left">
+          <h1>
+            Jot <span className="version">v{__APP_VERSION__}</span>
+          </h1>
+          {selectedCategory !== null ? <FolderControl category={selectedCategory} /> : null}
+        </div>
         <div className="header-actions">
           <div className="search-control">
             <input
@@ -526,7 +529,6 @@ export function App(): JSX.Element {
             <span className="sort-label">Sort</span>
             <SortMenu value={sortMode} options={SORT_OPTIONS} onChange={setSortMode} />
           </div>
-          {selectedCategory !== null ? <FolderControl category={selectedCategory} /> : null}
           <div className="view-toggle">
             <button
               className={`view-toggle-btn${viewMode === 'list' ? ' active' : ''}`}
@@ -833,10 +835,11 @@ export function App(): JSX.Element {
 }
 
 /**
- * Compact header control showing the folder associated with the currently
- * selected list (if any). Lives inline with the other header-actions controls
- * (search, sort, view toggle) — matches their border/padding/muted-text look
- * rather than standing out as a colorful one-off.
+ * Header control showing the folder associated with the currently selected
+ * list (if any). Left-aligned in the header, separate from the right-side
+ * button cluster — a small pick button followed by the path as plain text,
+ * matching Maestro's compact repo-folder control. Muted throughout, no
+ * colorful accent.
  */
 function FolderControl({ category }: { category: Category }): JSX.Element {
   const repoPath = category.repoPath ?? null
@@ -850,7 +853,7 @@ function FolderControl({ category }: { category: Category }): JSX.Element {
 
   if (repoPath === null) {
     return (
-      <button className="icon-btn" onClick={pickAndSet} title="Link a folder to this list">
+      <button className="icon-btn folder-control-link" onClick={pickAndSet} title="Link a folder to this list">
         📁 Link folder
       </button>
     )
