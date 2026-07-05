@@ -862,6 +862,31 @@ export function App(): JSX.Element {
 }
 
 /**
+ * Monochrome folder glyph for the folder control. Uses currentColor so it
+ * inherits the muted control color instead of rendering as a colorful emoji.
+ */
+function FolderIcon(): JSX.Element {
+  return (
+    <svg
+      className="folder-icon"
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <path
+        d="M1.5 3.5C1.5 2.94772 1.94772 2.5 2.5 2.5H6L7.5 4.5H13.5C14.0523 4.5 14.5 4.94772 14.5 5.5V12.5C14.5 13.0523 14.0523 13.5 13.5 13.5H2.5C1.94772 13.5 1.5 13.0523 1.5 12.5V3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/**
  * Header control showing the folder associated with the currently selected
  * list (if any). Left-aligned in the header, separate from the right-side
  * button cluster — a small pick button followed by the path as plain text,
@@ -881,7 +906,7 @@ function FolderControl({ category }: { category: Category }): JSX.Element {
   if (repoPath === null) {
     return (
       <button className="icon-btn folder-control-link" onClick={pickAndSet} title="Link a folder to this list">
-        📁 Link folder
+        <FolderIcon /> Link folder
       </button>
     )
   }
@@ -889,7 +914,7 @@ function FolderControl({ category }: { category: Category }): JSX.Element {
   return (
     <div className="folder-control" title={repoPath}>
       <button className="icon-btn folder-control-pick" onClick={pickAndSet} title="Change folder">
-        📁
+        <FolderIcon />
       </button>
       <span className="folder-control-path">{repoPath}</span>
       <button

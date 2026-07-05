@@ -1043,10 +1043,20 @@ body {
 .folder-control-pick {
   flex-shrink: 0;
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .folder-control-link {
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.folder-icon {
+  flex-shrink: 0;
+  color: var(--text-dim);
 }
 
 .folder-control-path {
