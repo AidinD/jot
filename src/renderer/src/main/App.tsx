@@ -91,6 +91,7 @@ const collisionDetectionStrategy: CollisionDetection = (args) => {
 export function App(): JSX.Element {
   const [state, setState] = useState<JotState>(EMPTY_STATE)
   const [filter, setFilter] = useState<string>('all')
+  const [domainFilter, setDomainFilter] = useState<'all' | 'work' | 'private'>('all')
   const [draft, setDraft] = useState('')
   const [addSuggestionIndex, setAddSuggestionIndex] = useState(0)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -599,6 +600,8 @@ export function App(): JSX.Element {
                 current === 'work' ? 'private' : current === 'private' ? null : 'work'
               window.jot.setCategoryDomain(id, back ? backward : forward)
             }}
+            domainFilter={domainFilter}
+            onDomainFilterChange={setDomainFilter}
             editingId={editingId}
             setEditingId={setEditingId}
           />
