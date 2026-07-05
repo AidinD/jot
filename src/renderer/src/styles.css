@@ -47,13 +47,20 @@ body {
 .app-header-left {
   display: flex;
   align-items: baseline;
-  gap: 16px;
+  /* Matches the .body gap so the folder control after the fixed-width brand
+     lines up with the main pane's left edge (the "Add a todo" field). */
+  gap: 14px;
 }
 
 .app-header h1 {
   margin: 0;
   font-size: 20px;
   letter-spacing: 0.5px;
+  /* Fixed to the sidebar width so the folder control starts at the same x as
+     the content column below it, not tucked against the brand. */
+  width: 210px;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .app-header h1 .version {
