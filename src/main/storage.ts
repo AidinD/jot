@@ -1,4 +1,4 @@
-import { promises as fs, watch as watchFs } from 'fs'
+import { promises as fs, watch as watchFs, watchFile as watchFileFs, unwatchFile as unwatchFileFs } from 'fs'
 import { basename, dirname, join } from 'path'
 import { resolveDataDir } from './data-dir'
 import type { Category, JotState, Tag, Todo, TodoStatus } from '../renderer/src/shared/types'
@@ -151,34 +151,55 @@ export class LocalJsonStorage implements StorageAdapter {
     let closed = false
     let debounceTimer: NodeJS.Timeout | null = null
 
+    // Both watch mechanisms funnel through here (debounced) so a burst of
+    // filesystem events - or an fs.watch event that arrives just before a poll
+    // tick - only triggers one reload.
+    const trigger = (): void => {
+      if (closed) {
+        return
+      }
+      if (debounceTimer !== null) {
+        clearTimeout(debounceTimer)
+      }
+      debounceTimer = setTimeout(() => {
+        debounceTimer = null
+        onChange()
+      }, 150)
+    }
+
     void fs.mkdir(directoryPath, { recursive: true }).catch((error) => {
       console.error('Failed to prepare watch directory', error)
     })
 
-    let watcher
+    // 1) fs.watch on the directory - fast and event-driven, but UNRELIABLE on
+    //    Windows and on cloud-synced folders (Dropbox): it drops events for
+    //    atomic tmp+rename writes and for files replaced by the sync client
+    //    from another machine. Kept for its low latency when it does fire.
+    let watcher: ReturnType<typeof watchFs> | null = null
     try {
       watcher = watchFs(directoryPath, (_eventType, filename) => {
-        if (closed) {
+        if (filename !== undefined && filename !== null && String(filename) !== targetFile) {
           return
         }
-        if (filename !== undefined && filename !== null) {
-          const observedName = String(filename)
-          if (observedName !== targetFile) {
-            return
-          }
-        }
-        if (debounceTimer !== null) {
-          clearTimeout(debounceTimer)
-        }
-        debounceTimer = setTimeout(() => {
-          debounceTimer = null
-          onChange()
-        }, 150)
+        trigger()
       })
     } catch (error) {
-      console.error('Failed to watch Jot storage file', error)
-      return () => {}
+      // Non-fatal: the polling fallback below still catches every change.
+      console.error('Failed to start fs.watch on Jot storage directory', error)
+      watcher = null
     }
+
+    // 2) Polling fallback (fs.watchFile) - stat-polls the file, so it catches
+    //    EVERY change regardless of how it was written (external editor, one of
+    //    our own scripts, or Dropbox syncing it down from another machine),
+    //    including the atomic renames fs.watch drops. Polling never misses; the
+    //    store's reloadFromDisk() diffs the JSON and no-ops when nothing
+    //    actually changed, so an idle poll tick is cheap.
+    watchFileFs(this.filePath, { interval: 1000 }, (curr, prev) => {
+      if (curr.mtimeMs !== prev.mtimeMs || curr.size !== prev.size) {
+        trigger()
+      }
+    })
 
     return () => {
       closed = true
@@ -186,7 +207,10 @@ export class LocalJsonStorage implements StorageAdapter {
         clearTimeout(debounceTimer)
         debounceTimer = null
       }
-      watcher.close()
+      if (watcher !== null) {
+        watcher.close()
+      }
+      unwatchFileFs(this.filePath)
     }
   }
 }
