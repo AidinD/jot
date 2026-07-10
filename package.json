@@ -1,6 +1,6 @@
 {
   "name": "jot",
-  "version": "1.5.17",
+  "version": "1.5.18",
   "description": "A keyboard-first quick-capture todo app",
   "main": "./out/main/index.js",
   "author": "Aidin",
