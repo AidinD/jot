@@ -5,13 +5,13 @@
 const DEADLINE_TOKEN = /(^|\s)@(\S+)(?=\s|$)/i
 
 const WEEKDAYS: Record<string, number> = {
-  sun: 0, sön: 0, söndag: 0,
-  mon: 1, mån: 1, måndag: 1,
-  tue: 2, tis: 2, tisdag: 2,
-  wed: 3, ons: 3, onsdag: 3,
-  thu: 4, tor: 4, torsdag: 4,
-  fri: 5, fre: 5, fredag: 5,
-  sat: 6, lör: 6, lördag: 6
+  sun: 0, sunday: 0, sön: 0, söndag: 0,
+  mon: 1, monday: 1, mån: 1, måndag: 1,
+  tue: 2, tuesday: 2, tis: 2, tisdag: 2,
+  wed: 3, wednesday: 3, ons: 3, onsdag: 3,
+  thu: 4, thursday: 4, tor: 4, torsdag: 4,
+  fri: 5, friday: 5, fre: 5, fredag: 5,
+  sat: 6, saturday: 6, lör: 6, lördag: 6
 }
 
 function startOfDay(d: Date): number {
