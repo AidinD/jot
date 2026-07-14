@@ -1817,6 +1817,34 @@ body {
   border-color: var(--accent);
 }
 
+.date-suggestions .suggestion {
+  justify-content: space-between;
+}
+
+.date-sug-label {
+  white-space: nowrap;
+}
+
+.date-sug-sub {
+  color: var(--text-dim);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/*
+ * Rendered (not display:none) so showPicker() is allowed, but kept out of
+ * sight and out of the tab order — the calendar anchors near the dropdown.
+ */
+.date-suggestions-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .last-cat-chip {
   display: inline-flex;
   align-items: center;
