@@ -162,3 +162,39 @@ transcript for the step-by-step; this file is only the choices worth revisiting.
   or beyond. The 1.5.7 installer must be installed manually one last time;
   every release after that can auto-update normally as long as it is published
   via `electron-builder --publish`.
+
+## Batch reconciliation 2026-07-04 -> 07-14 (from git history)
+
+The docs had drifted 21 commits behind the code (releases v1.5.7 -> v1.5.20).
+Reconstructed from the commit history, not captured live - so it records WHAT
+shipped + the clear decisions the commits show, without inventing unwritten
+rationale.
+
+**Per-list Work/Private domain field (v1.5.14).**
+Each list can be tagged Work or Private; this feeds the Focus filter (below) and
+is the same domain axis the Claude<->Jot integration reads. The domain chip sets
+Private on first click and right-click cycles backward (v1.5.15).
+
+**Focus filter: show lists by domain - All / Work / Private (v1.5.16).**
+A top-level filter to view only work or only private lists, built on the
+per-list domain field.
+
+**Auto-update hardening (continues the auto-update thread above).**
+Releases are now published DIRECTLY (`releaseType: release`), not as drafts, so
+the uploaded asset name matches `latest.yml` (a hand-crafted/draft release broke
+electron-updater's download - see the prior entry). Fixed a 1.5.7 launch crash
+from CJS interop (default-import electron-updater). Added an in-app update toast
+(v1.5.12). Added a storage POLLING fallback so external edits to the data file
+reliably reload even when fs.watch misses them (v1.5.17) - important because the
+data dir is Dropbox-synced and edited by other tools (Claude, Maestro).
+
+**Capture/date-entry ergonomics.**
+An `@` date-picker dropdown in the capture + add-bar inputs (v1.5.19-1.5.20);
+`@deadline` accepts full English weekday names; the calendar picker opens on
+click/focus of the deadline field; empty-Enter in quick capture opens the main
+window.
+
+**Look + window:** new app + tray icon (v1.5.18); a monochrome SVG folder icon
+replacing the colourful emoji (v1.5.13); folder control moved into the header row
+and aligned with the content column, with window-size iterations. Added a project
+`CLAUDE.md` pointing at DECISIONS/README/INTEGRATION.
