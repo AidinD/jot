@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -13,7 +13,9 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 import type { Category, JotState, Tag, Todo, TodoStatus } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 import { parsePriority, priorityLabel } from '@shared/priority'
-import { parseDeadline } from '@shared/deadline'
+import { completeAtToken, dateSuggestions, parseDeadline, TRAILING_AT } from '@shared/deadline'
+import { DateSuggestions } from '@shared/DateSuggestions'
+import type { DateSuggestionsHandle } from '@shared/DateSuggestions'
 import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
@@ -94,6 +96,8 @@ export function App(): JSX.Element {
   const [domainFilter, setDomainFilter] = useState<'all' | 'work' | 'private'>('all')
   const [draft, setDraft] = useState('')
   const [addSuggestionIndex, setAddSuggestionIndex] = useState(0)
+  const [addDateIndex, setAddDateIndex] = useState(0)
+  const dateSuggestionsRef = useRef<DateSuggestionsHandle>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
 
@@ -287,6 +291,22 @@ export function App(): JSX.Element {
       })
       .slice(0, MAX_ADD_SUGGESTIONS)
   }, [addPartial, state.categories])
+
+  // Active `@partial` at the end of the draft drives the date-picker dropdown,
+  // mirroring how addPartial (`#`) drives the category dropdown.
+  const addAtPartial = useMemo(() => {
+    const match = draft.match(TRAILING_AT)
+    return match !== null ? match[2] : null
+  }, [draft])
+
+  const addDateSugs = useMemo(() => {
+    return addAtPartial === null ? [] : dateSuggestions(addAtPartial)
+  }, [addAtPartial])
+
+  function pickDraftDate(token: string): void {
+    setDraft(completeAtToken(draft, token))
+    setAddDateIndex(0)
+  }
 
   const counts = useMemo<Counts>(() => {
     const byCategory: Record<string, number> = {}
@@ -617,6 +637,7 @@ export function App(): JSX.Element {
                   onChange={(event) => {
                     setDraft(event.target.value)
                     setAddSuggestionIndex(0)
+                    setAddDateIndex(0)
                   }}
                   onKeyDown={(event) => {
                     if (addSuggestions.length > 0) {
@@ -654,6 +675,31 @@ export function App(): JSX.Element {
                         return
                       }
                     }
+                    // Date dropdown navigation (trailing `@token`); the index
+                    // past the suggestions is the "Pick a date…" calendar row.
+                    if (addAtPartial !== null) {
+                      const navLength = addDateSugs.length + 1
+                      if (event.key === 'ArrowDown') {
+                        event.preventDefault()
+                        setAddDateIndex((i) => (i + 1) % navLength)
+                        return
+                      }
+                      if (event.key === 'ArrowUp') {
+                        event.preventDefault()
+                        setAddDateIndex((i) => (i - 1 + navLength) % navLength)
+                        return
+                      }
+                      if (event.key === 'Enter' || event.key === 'Tab') {
+                        event.preventDefault()
+                        const chosen = addDateSugs[addDateIndex]
+                        if (chosen !== undefined) {
+                          pickDraftDate(chosen.token)
+                        } else {
+                          dateSuggestionsRef.current?.openCalendar()
+                        }
+                        return
+                      }
+                    }
                     if (event.key === 'Enter') {
                       event.preventDefault()
                       handleAdd()
@@ -684,6 +730,15 @@ export function App(): JSX.Element {
                     )
                   })}
                 </div>
+              ) : addAtPartial !== null ? (
+                <DateSuggestions
+                  ref={dateSuggestionsRef}
+                  className="add-suggestions"
+                  suggestions={addDateSugs}
+                  activeIndex={addDateIndex}
+                  onPick={(suggestion) => pickDraftDate(suggestion.token)}
+                  onCalendarPick={(iso) => pickDraftDate(iso)}
+                />
               ) : null}
             </div>
 

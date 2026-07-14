@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Category } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
 import { parsePriority } from '@shared/priority'
-import { parseDeadline } from '@shared/deadline'
+import { completeAtToken, dateSuggestions, parseDeadline, TRAILING_AT } from '@shared/deadline'
+import { DateSuggestions } from '@shared/DateSuggestions'
+import type { DateSuggestionsHandle } from '@shared/DateSuggestions'
 
 const MAX_SUGGESTIONS = 6
 
@@ -12,10 +14,12 @@ export function Capture(): JSX.Element {
   const [text, setText] = useState('')
   const [categories, setCategories] = useState<Category[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
+  const [dateIndex, setDateIndex] = useState(0)
   const [lastCategoryId, setLastCategoryId] = useState<string | null>(() => {
     return localStorage.getItem(LAST_CAT_KEY)
   })
   const inputRef = useRef<HTMLInputElement>(null)
+  const dateSuggestionsRef = useRef<DateSuggestionsHandle>(null)
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -31,6 +35,7 @@ export function Capture(): JSX.Element {
     const unsubscribeReset = window.capture.onReset(() => {
       setText('')
       setActiveIndex(0)
+      setDateIndex(0)
       inputRef.current?.focus()
     })
 
@@ -91,6 +96,17 @@ export function Capture(): JSX.Element {
       .slice(0, MAX_SUGGESTIONS)
   }, [partial, categories])
 
+  // Active `@partial` being typed at the end of the input, if any. Drives the
+  // date-picker dropdown the same way `partial` drives the category dropdown.
+  const atPartial = useMemo(() => {
+    const match = text.match(TRAILING_AT)
+    return match !== null ? match[2] : null
+  }, [text])
+
+  const dateSugs = useMemo(() => {
+    return atPartial === null ? [] : dateSuggestions(atPartial)
+  }, [atPartial])
+
   function submitWith(value: string, categoryId: string | null): void {
     const { priority, text: withoutPriority } = parsePriority(value)
     const { deadline, text: withoutDeadline } = parseDeadline(withoutPriority)
@@ -107,6 +123,12 @@ export function Capture(): JSX.Element {
 
   function acceptSuggestion(category: Category): void {
     submitWith(stripTrailingHashtag(text), category.id)
+  }
+
+  function pickDate(token: string): void {
+    setText(completeAtToken(text, token))
+    setDateIndex(0)
+    inputRef.current?.focus()
   }
 
   /**
@@ -186,6 +208,32 @@ export function Capture(): JSX.Element {
       }
     }
 
+    // Date dropdown navigation (trailing `@token`). The last index past the
+    // suggestions is the "Pick a date…" calendar row.
+    if (atPartial !== null) {
+      const navLength = dateSugs.length + 1
+      if (event.key === 'ArrowDown') {
+        event.preventDefault()
+        setDateIndex((index) => (index + 1) % navLength)
+        return
+      }
+      if (event.key === 'ArrowUp') {
+        event.preventDefault()
+        setDateIndex((index) => (index - 1 + navLength) % navLength)
+        return
+      }
+      if (event.key === 'Enter' || event.key === 'Tab') {
+        event.preventDefault()
+        const chosen = dateSugs[dateIndex]
+        if (chosen !== undefined) {
+          pickDate(chosen.token)
+        } else {
+          dateSuggestionsRef.current?.openCalendar()
+        }
+        return
+      }
+    }
+
     if (event.key === 'Enter') {
       event.preventDefault()
       // Empty input + Enter opens the full Jot window instead of doing nothing.
@@ -207,6 +255,7 @@ export function Capture(): JSX.Element {
         onChange={(event) => {
           setText(event.target.value)
           setActiveIndex(0)
+          setDateIndex(0)
         }}
         onKeyDown={handleKeyDown}
       />
@@ -231,6 +280,15 @@ export function Capture(): JSX.Element {
             )
           })}
         </div>
+      ) : atPartial !== null ? (
+        <DateSuggestions
+          ref={dateSuggestionsRef}
+          className="capture-suggestions"
+          suggestions={dateSugs}
+          activeIndex={dateIndex}
+          onPick={(suggestion) => pickDate(suggestion.token)}
+          onCalendarPick={(iso) => pickDate(iso)}
+        />
       ) : lastCategory !== null ? (
         <div className="capture-hint">
           <div className="last-cat-chip">
@@ -252,7 +310,7 @@ export function Capture(): JSX.Element {
       ) : (
         <div className="capture-hint">
           <span>{text.trim() === '' ? 'Enter to open Jot' : 'Enter to save'}</span>
-          <span>#list to file or create · Esc to dismiss</span>
+          <span>#list · @date · Esc to dismiss</span>
         </div>
       )}
     </div>
