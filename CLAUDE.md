@@ -4,9 +4,11 @@ Keyboard-first quick-capture todo app (Electron + React + TypeScript, via
 electron-vite). Personal/private project; source is public at
 github.com/AidinD/jot (MIT).
 
-Before making changes, read `DECISIONS.md` (architecture rationale — the *why*
-behind the current shape) and `README.md` (file-by-file layout). `INTEGRATION.md`
-is the external-agent contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
+If `HANDOFF.md` exists, read it FIRST — it's the latest session's current state
++ what's next (overwritten each handoff, so always small). Before making changes,
+read `DECISIONS.md` (architecture rationale — the *why* behind the current shape)
+and `README.md` (file-by-file layout). `INTEGRATION.md` is the external-agent
+contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
 
 ## Build & run
 
