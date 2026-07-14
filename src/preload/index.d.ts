@@ -46,6 +46,7 @@ interface CaptureBridge {
     deadline?: number | null
   ) => Promise<void>
   close: () => void
+  openMain: () => void
   onReset: (callback: () => void) => () => void
 }
 

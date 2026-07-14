@@ -188,6 +188,11 @@ export function Capture(): JSX.Element {
 
     if (event.key === 'Enter') {
       event.preventDefault()
+      // Empty input + Enter opens the full Jot window instead of doing nothing.
+      if (text.trim() === '') {
+        window.capture.openMain()
+        return
+      }
       submitFromText()
     }
   }
@@ -246,7 +251,7 @@ export function Capture(): JSX.Element {
         </div>
       ) : (
         <div className="capture-hint">
-          <span>Enter to save</span>
+          <span>{text.trim() === '' ? 'Enter to open Jot' : 'Enter to save'}</span>
           <span>#list to file or create · Esc to dismiss</span>
         </div>
       )}
