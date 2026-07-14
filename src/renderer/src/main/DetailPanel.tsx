@@ -258,6 +258,23 @@ export function DetailPanel({
           type="date"
           value={toDateInputValue(todo.deadline)}
           onChange={(e) => handleDeadlineChange(e.target.value)}
+          // Clicking or focusing the field opens the calendar, not just the
+          // tiny native indicator icon. showPicker() throws if called without
+          // a user gesture, so guard it.
+          onClick={(e) => {
+            try {
+              e.currentTarget.showPicker()
+            } catch {
+              // Ignore — the native indicator still works as a fallback.
+            }
+          }}
+          onFocus={(e) => {
+            try {
+              e.currentTarget.showPicker()
+            } catch {
+              // Ignore — focus without a gesture (e.g. programmatic) can't open it.
+            }
+          }}
         />
         {todo.deadline !== null ? (
           <button className="link-button" onClick={() => window.jot.setTodoDeadline(todo.id, null)}>
