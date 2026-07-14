@@ -324,6 +324,12 @@ function registerIpc(): void {
       captureWindow.hide()
     }
   })
+  ipcMain.on('capture:openMain', () => {
+    if (captureWindow !== null) {
+      captureWindow.hide()
+    }
+    showMainWindow()
+  })
 
   ipcMain.on('update:install', () => {
     autoUpdater.quitAndInstall()

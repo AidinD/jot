@@ -126,6 +126,9 @@ const captureApi = {
   close: (): void => {
     ipcRenderer.send('capture:close')
   },
+  openMain: (): void => {
+    ipcRenderer.send('capture:openMain')
+  },
   onReset: (callback: () => void): (() => void) => {
     const handler = (): void => {
       callback()
