@@ -1,7 +1,6 @@
 import { promises as fs, watch as watchFs, watchFile as watchFileFs, unwatchFile as unwatchFileFs } from 'fs'
-import { basename, dirname, join } from 'path'
-import { resolveDataDir } from './data-dir'
-import type { Category, JotState, Tag, Todo, TodoStatus } from '../core/types'
+import { basename, dirname } from 'path'
+import type { Category, JotState, Tag, Todo, TodoStatus } from './types'
 
 // Seeded once, the first time a pre-tags file is loaded (when `tags` is absent).
 // Fixed ids so re-seeding never duplicates. The user can edit/delete/add freely.
@@ -121,8 +120,11 @@ function migrate(parsed: unknown): JotState {
 export class LocalJsonStorage implements StorageAdapter {
   private readonly filePath: string
 
-  constructor(filePath?: string) {
-    this.filePath = filePath ?? join(resolveDataDir(), 'todos.json')
+  // The absolute path to todos.json. Required and injected by the shell (the
+  // standalone app or Helm) - core has no electron dependency, so it never
+  // resolves the data dir itself (that stays in the shell's data-dir.ts).
+  constructor(filePath: string) {
+    this.filePath = filePath
   }
 
   async load(): Promise<JotState> {

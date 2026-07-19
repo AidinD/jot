@@ -8,8 +8,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // CJS deps. This crashed 1.5.7 on launch; keep it as a default import.
 import electronUpdater from 'electron-updater'
 const { autoUpdater } = electronUpdater
-import { LocalJsonStorage } from './storage'
-import { TodoStore } from './store'
+import { LocalJsonStorage, TodoStore } from '../core'
 import { resolveDataDir, migrateLegacyData } from './data-dir'
 import { loadPrefs, savePrefs } from './prefs'
 import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
@@ -22,7 +21,11 @@ let captureWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 let autoLaunch = true
 
-const store = new TodoStore(new LocalJsonStorage())
+// The shell owns data-dir resolution (electron userData or JOT_DATA_DIR) and
+// injects it into the electron-free core: the todos.json path into storage, and
+// the dir into the store (for image + archive paths).
+const jotDataDir = resolveDataDir()
+const store = new TodoStore(new LocalJsonStorage(join(jotDataDir, 'todos.json')), jotDataDir)
 
 function logStartup(message: string): void {
   try {
