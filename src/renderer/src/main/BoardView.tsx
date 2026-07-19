@@ -1,3 +1,4 @@
+import { jotApi } from '../jotApiClient'
 import { useState } from 'react'
 import { useDroppable, useDraggable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
@@ -116,11 +117,11 @@ function BoardColumn({
               <button
                 className="link-button"
                 title="Move completed to archive.json (keeps history)"
-                onClick={() => window.jot.archiveCompleted()}
+                onClick={() => jotApi().archiveCompleted()}
               >
                 Archive
               </button>
-              <button className="link-button" onClick={() => window.jot.clearCompleted()}>
+              <button className="link-button" onClick={() => jotApi().clearCompleted()}>
                 Clear
               </button>
             </>
@@ -192,7 +193,7 @@ function BoardCard({
         title="Delete"
         onClick={(e) => {
           e.stopPropagation()
-          window.jot.removeTodo(todo.id)
+          jotApi().removeTodo(todo.id)
         }}
       >
         ×

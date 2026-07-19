@@ -1,3 +1,4 @@
+import { jotApi } from '../jotApiClient'
 import { useState } from 'react'
 import type { Todo, TodoStatus } from '@shared/types'
 
@@ -24,7 +25,7 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
     if (text.length === 0) {
       return
     }
-    void window.jot.addSubtask(parentId, text)
+    void jotApi().addSubtask(parentId, text)
     setDraft('')
   }
 
@@ -34,7 +35,7 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
     if (nextIndex < 0) {
       nextIndex = STATUS_CYCLE.length - 1
     }
-    window.jot.setStatus(subtask.id, STATUS_CYCLE[nextIndex % STATUS_CYCLE.length])
+    jotApi().setStatus(subtask.id, STATUS_CYCLE[nextIndex % STATUS_CYCLE.length])
   }
 
   const doneCount = subtasks.filter((s) => s.status === 'done').length
@@ -74,7 +75,7 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
                 title="Delete subtask"
                 onClick={(e) => {
                   e.stopPropagation()
-                  window.jot.removeTodo(subtask.id)
+                  jotApi().removeTodo(subtask.id)
                 }}
               >
                 ×

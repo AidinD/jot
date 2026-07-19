@@ -1,3 +1,4 @@
+import { jotApi } from '../jotApiClient'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Category } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
@@ -24,10 +25,10 @@ export function Capture(): JSX.Element {
   useEffect(() => {
     inputRef.current?.focus()
 
-    window.jot.getState().then((state) => {
+    jotApi().getState().then((state) => {
       setCategories(state.categories)
     })
-    const unsubscribeState = window.jot.onChanged((state) => {
+    const unsubscribeState = jotApi().onChanged((state) => {
       setCategories(state.categories)
     })
 
@@ -156,7 +157,7 @@ export function Capture(): JSX.Element {
       submitWith(stripped, existing.id)
       return
     }
-    const newCategoryId = await window.jot.addCategory(rawName)
+    const newCategoryId = await jotApi().addCategory(rawName)
     submitWith(stripped, newCategoryId)
   }
 
