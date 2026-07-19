@@ -1,7 +1,7 @@
 import { promises as fs, watch as watchFs, watchFile as watchFileFs, unwatchFile as unwatchFileFs } from 'fs'
 import { basename, dirname, join } from 'path'
 import { resolveDataDir } from './data-dir'
-import type { Category, JotState, Tag, Todo, TodoStatus } from '../renderer/src/shared/types'
+import type { Category, JotState, Tag, Todo, TodoStatus } from '../core/types'
 
 // Seeded once, the first time a pre-tags file is loaded (when `tags` is absent).
 // Fixed ids so re-seeding never duplicates. The user can edit/delete/add freely.

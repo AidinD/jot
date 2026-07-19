@@ -13,7 +13,7 @@ import { TodoStore } from './store'
 import { resolveDataDir, migrateLegacyData } from './data-dir'
 import { loadPrefs, savePrefs } from './prefs'
 import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
-import type { TodoStatus } from '../renderer/src/shared/types'
+import type { TodoStatus } from '../core/types'
 
 const CAPTURE_SHORTCUT = 'Control+Alt+.'
 

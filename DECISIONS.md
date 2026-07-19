@@ -3,6 +3,25 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-07-18 — Split into core + UI (one repo, workspace packages)
+
+Jot is being split into a `@jot/core` (data + logic + events) and a `@jot/ui` (React component) so that BOTH the standalone Jot shell AND a coming Jot tab inside Helm can mount the SAME implementation - "one Jot, two mounts", never two diverging copies.
+Full rationale lives in Helm's docs/auto-captain-design.md + Helm DECISIONS.md "Jot and Helm: one Jot, two mounts" (the driver is Helm's auto-start feature, which needs Helm to write to the board and react live).
+
+**One repo, workspace packages - not two repos.**
+Core and UI version together and have no independent lifecycle, so separate repos would be pure overhead (multi-repo pays off for independent lifecycles/teams).
+They stay in AidinD/jot as workspaces (`packages/core`, `packages/ui`, plus the standalone app shell); Helm is the separate product that consumes `@jot/core` + `@jot/ui`.
+This is consistent with "Jot and Helm are separate products": core+ui are both parts of Jot; Helm consumes them.
+How Helm consumes them (npm publish vs git submodule vs local path) is deferred to the integration step - Jot is public/MIT so npm is possible, but not locked now.
+
+**The good news from the current structure:** the split mostly relocates boundaries that already exist, it isn't a rewrite.
+`TodoStore` (store.ts) already has NO electron imports, takes a dependency-injected `StorageAdapter`, has a change-listener event bus, and already watches the data file to reload on external changes.
+`JotApi`/`JotState` are already a defined contract, and mutations already return void with canonical state pushed via `onChanged` - so the UI is already event-driven.
+The real work: (1) move types + `TodoStore` + storage into a core module with the data dir INJECTED (drop the electron `app.getPath` coupling into the shell); (2) make the UI consume an INJECTED `JotApi` instead of the hardcoded `window.jot`; (3) later, a host/client mode so one runtime writer owns the file when both apps run.
+
+**Path: incremental, behaviour-preserving first.**
+Establish clean internal module separation within this repo (app boots identically), THEN promote core+ui to workspace packages, THEN host/client. Not a big-bang restructure.
+
 ## 2026-06-22 — Initial architecture
 
 **Stack: Electron + React + TypeScript + Vite (electron-vite).**
