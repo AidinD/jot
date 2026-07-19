@@ -1,8 +1,7 @@
 import { randomUUID } from 'crypto'
 import { promises as fs } from 'fs'
 import { dirname, join, extname } from 'path'
-import { resolveDataDir } from './data-dir'
-import type { Category, JotState, Tag, Todo, TodoStatus } from '../core/types'
+import type { Category, JotState, Tag, Todo, TodoStatus } from './types'
 import type { StorageAdapter } from './storage'
 
 type ChangeListener = (state: JotState) => void
@@ -31,7 +30,12 @@ export class TodoStore {
   private reloadInFlight: Promise<void> | null = null
   private reloadQueued = false
 
-  constructor(private readonly storage: StorageAdapter) {}
+  // dataDir: the absolute data directory (for image + archive paths), injected
+  // by the shell so core stays electron-free (the shell owns data-dir resolution).
+  constructor(
+    private readonly storage: StorageAdapter,
+    private readonly dataDir: string
+  ) {}
 
   async init(): Promise<void> {
     this.state = await this.storage.load()
@@ -198,7 +202,7 @@ export class TodoStore {
   ): Promise<string> {
     const fileName = `${randomUUID()}${ext}`
     const relativePath = join('jot-images', todoId, fileName)
-    const absolutePath = join(resolveDataDir(), relativePath)
+    const absolutePath = join(this.dataDir, relativePath)
 
     await fs.mkdir(dirname(absolutePath), { recursive: true })
     await writeFile(absolutePath)
@@ -228,7 +232,7 @@ export class TodoStore {
     })
     await this.persist()
 
-    const absolutePath = join(resolveDataDir(), imagePath)
+    const absolutePath = join(this.dataDir, imagePath)
     try {
       await fs.unlink(absolutePath)
     } catch (e) {
@@ -324,7 +328,7 @@ export class TodoStore {
       return 0
     }
 
-    const archivePath = join(resolveDataDir(), 'archive.json')
+    const archivePath = join(this.dataDir, 'archive.json')
     let archived: (Todo & { archivedAt?: number })[] = []
     try {
       const raw = await fs.readFile(archivePath, 'utf-8')
