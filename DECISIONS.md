@@ -22,6 +22,11 @@ The real work: (1) move types + `TodoStore` + storage into a core module with th
 **Path: incremental, behaviour-preserving first.**
 Establish clean internal module separation within this repo (app boots identically), THEN promote core+ui to workspace packages, THEN host/client. Not a big-bang restructure.
 
+**Refinement 2026-07-18 (after inspecting Helm + proving core consumption):** the packaging is asymmetric, which is simpler than first planned.
+Helm's renderer is plain vanilla JS (no React, no bundler), so the UI is NOT shipped as an importable React component - that would force React into Helm. Instead the UI is shared as Jot's BUILT RENDERER, which a second shell (Helm) embeds in a WebContentsView/`<webview>` with a preload wiring `window.jot` to a core. So only `@jot/core` needs to be a real package; there is no `@jot/ui` component package to build (the fiddliest part, now avoided).
+`@jot/core` consumability is proven: compiled standalone (tsc), an external consumer instantiated TodoStore against a todos.json and successfully read another shell's data, mutated, received change events, and persisted back to the shared file.
+Open packaging detail: module format. This repo is `type: module` (ESM), so `@jot/core` should ship ESM - which needs a bundled or extension-correct build (the source uses extensionless imports that raw Node ESM won't resolve). Decided at the packaging step.
+
 ## 2026-06-22 — Initial architecture
 
 **Stack: Electron + React + TypeScript + Vite (electron-vite).**
