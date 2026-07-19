@@ -1,4 +1,4 @@
-import type { JotState, TodoStatus } from '../renderer/src/shared/types'
+import type { JotState, TodoStatus } from '../core/types'
 
 interface JotBridge {
   getState: () => Promise<JotState>

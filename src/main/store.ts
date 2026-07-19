@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import { promises as fs } from 'fs'
 import { dirname, join, extname } from 'path'
 import { resolveDataDir } from './data-dir'
-import type { Category, JotState, Tag, Todo, TodoStatus } from '../renderer/src/shared/types'
+import type { Category, JotState, Tag, Todo, TodoStatus } from '../core/types'
 import type { StorageAdapter } from './storage'
 
 type ChangeListener = (state: JotState) => void

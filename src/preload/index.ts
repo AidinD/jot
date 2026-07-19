@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { JotState, TodoStatus } from '../renderer/src/shared/types'
+import type { JotState, TodoStatus } from '../core/types'
 
 const jotApi = {
   getState: (): Promise<JotState> => {
