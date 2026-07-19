@@ -1,3 +1,4 @@
+import { jotApi } from '../jotApiClient'
 import { useEffect, useRef, useState } from 'react'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { fromDateInputValue, toDateInputValue } from '@shared/deadline'
@@ -62,7 +63,7 @@ export function DetailPanel({
     const paths = new Map<string, string>()
     Promise.all(
       todo.images.map(async (rel) => {
-        const abs = await window.jot.getImagePath(rel)
+        const abs = await jotApi().getImagePath(rel)
         if (active) {
           paths.set(rel, abs)
         }
@@ -95,7 +96,7 @@ export function DetailPanel({
           event.preventDefault()
           const ext = MIME_TO_EXT[file.type] ?? '.png'
           file.arrayBuffer().then((buffer) => {
-            void window.jot.addImageData(todoId, new Uint8Array(buffer), ext)
+            void jotApi().addImageData(todoId, new Uint8Array(buffer), ext)
           })
           return
         }
@@ -127,25 +128,25 @@ export function DetailPanel({
   function saveTitle(): void {
     const trimmed = title.trim()
     if (trimmed.length > 0 && trimmed !== todo.text) {
-      window.jot.updateTodo(todo.id, { text: trimmed })
+      jotApi().updateTodo(todo.id, { text: trimmed })
     }
   }
 
   function saveDescription(): void {
     if (description !== todo.description) {
-      window.jot.updateTodo(todo.id, { description })
+      jotApi().updateTodo(todo.id, { description })
     }
   }
 
   function handleStatusChange(status: TodoStatus): void {
-    window.jot.setStatus(todo.id, status)
+    jotApi().setStatus(todo.id, status)
   }
 
   function toggleTag(tagId: string): void {
     const next = todo.tags.includes(tagId)
       ? todo.tags.filter((id) => id !== tagId)
       : [...todo.tags, tagId]
-    window.jot.setTodoTags(todo.id, next)
+    jotApi().setTodoTags(todo.id, next)
   }
 
   function savePriority(value: string): void {
@@ -153,7 +154,7 @@ export function DetailPanel({
     const next = Number.isFinite(parsed) ? parsed : 0
     setPriorityDraft(String(next))
     if (next !== todo.priority) {
-      window.jot.setTodoPriority(todo.id, next)
+      jotApi().setTodoPriority(todo.id, next)
     }
   }
 
@@ -162,15 +163,15 @@ export function DetailPanel({
   }
 
   function handleDeadlineChange(value: string): void {
-    window.jot.setTodoDeadline(todo.id, fromDateInputValue(value))
+    jotApi().setTodoDeadline(todo.id, fromDateInputValue(value))
   }
 
   function handleAddImage(): void {
-    window.jot.addImage(todo.id)
+    jotApi().addImage(todo.id)
   }
 
   function handleRemoveImage(imagePath: string): void {
-    window.jot.removeImage(todo.id, imagePath)
+    jotApi().removeImage(todo.id, imagePath)
   }
 
   const created = new Date(todo.createdAt)
@@ -277,7 +278,7 @@ export function DetailPanel({
           }}
         />
         {todo.deadline !== null ? (
-          <button className="link-button" onClick={() => window.jot.setTodoDeadline(todo.id, null)}>
+          <button className="link-button" onClick={() => jotApi().setTodoDeadline(todo.id, null)}>
             Clear
           </button>
         ) : null}

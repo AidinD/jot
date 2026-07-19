@@ -1,3 +1,4 @@
+import { jotApi } from '../jotApiClient'
 import { useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -69,7 +70,7 @@ export function TodoItem({
   function commitEdit(): void {
     const trimmed = draft.trim()
     if (trimmed.length > 0 && trimmed !== todo.text) {
-      window.jot.updateTodo(todo.id, { text: trimmed })
+      jotApi().updateTodo(todo.id, { text: trimmed })
     }
     onStopEdit()
   }

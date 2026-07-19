@@ -1,3 +1,4 @@
+import { jotApi } from '../jotApiClient'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   closestCenter,
@@ -124,12 +125,12 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     let active = true
-    window.jot.getState().then((initial) => {
+    jotApi().getState().then((initial) => {
       if (active) {
         setState(initial)
       }
     })
-    const unsubscribe = window.jot.onChanged((next) => {
+    const unsubscribe = jotApi().onChanged((next) => {
       setState(next)
     })
     return () => {
@@ -153,6 +154,12 @@ export function App(): JSX.Element {
   }, [toast])
 
   useEffect(() => {
+    // App self-update is a STANDALONE-SHELL concern (electron-updater), not part
+    // of the core JotApi - it stays on window.jot. When Helm mounts this UI it
+    // won't provide these, so the update toast is gated to the standalone shell.
+    if (typeof window.jot?.onUpdateReady !== 'function') {
+      return
+    }
     const unsubscribe = window.jot.onUpdateReady((version) => {
       setUpdateVersion(version)
     })
@@ -384,7 +391,7 @@ export function App(): JSX.Element {
       if (text.length === 0) {
         return
       }
-      await window.jot.addTodo(text, overrideCategoryId, prio, dl)
+      await jotApi().addTodo(text, overrideCategoryId, prio, dl)
       setDraft('')
       setAddSuggestionIndex(0)
       return
@@ -402,15 +409,15 @@ export function App(): JSX.Element {
         return normalize(c.name) === normalize(rawName)
       })
       const categoryId =
-        existing !== undefined ? existing.id : await window.jot.addCategory(rawName)
-      await window.jot.addTodo(text, categoryId, prio, dl)
+        existing !== undefined ? existing.id : await jotApi().addCategory(rawName)
+      await jotApi().addTodo(text, categoryId, prio, dl)
     } else {
       const text = rawDraft.trim()
       if (text.length === 0) {
         return
       }
       const categoryId = filter === 'all' || filter === 'uncategorized' ? null : filter
-      await window.jot.addTodo(text, categoryId, prio, dl)
+      await jotApi().addTodo(text, categoryId, prio, dl)
     }
     setDraft('')
     setAddSuggestionIndex(0)
@@ -447,7 +454,7 @@ export function App(): JSX.Element {
         const newIndex = catIds.indexOf(overCatId)
         if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
           const newOrder = arrayMove(catIds, oldIndex, newIndex)
-          await window.jot.reorderCategories(newOrder)
+          await jotApi().reorderCategories(newOrder)
         }
       }
       return
@@ -459,31 +466,31 @@ export function App(): JSX.Element {
     if (overId.startsWith('drop:')) {
       const target = overId.slice('drop:'.length)
       if (target === 'uncat') {
-        await window.jot.setTodoCategory(todoId, null)
+        await jotApi().setTodoCategory(todoId, null)
         return
       }
       if (target === 'newcat') {
-        const newCategoryId = await window.jot.addCategory('New list')
-        await window.jot.setTodoCategory(todoId, newCategoryId)
+        const newCategoryId = await jotApi().addCategory('New list')
+        await jotApi().setTodoCategory(todoId, newCategoryId)
         setEditingId(newCategoryId)
         return
       }
       if (target.startsWith('cat:')) {
-        await window.jot.setTodoCategory(todoId, target.slice('cat:'.length))
+        await jotApi().setTodoCategory(todoId, target.slice('cat:'.length))
         return
       }
       if (target.startsWith('status:')) {
         const status = target.slice('status:'.length) as TodoStatus
         // Land at the top of the column it was dropped into.
-        await window.jot.setStatus(todoId, status, true)
+        await jotApi().setStatus(todoId, status, true)
         return
       }
       // A priority band lives under Open, so dropping here also opens the todo.
       if (target.startsWith('prio:')) {
         const priority = parseInt(target.slice('prio:'.length), 10)
         if (Number.isFinite(priority)) {
-          await window.jot.setStatus(todoId, 'open')
-          await window.jot.setTodoPriority(todoId, priority)
+          await jotApi().setStatus(todoId, 'open')
+          await jotApi().setTodoPriority(todoId, priority)
         }
         return
       }
@@ -492,7 +499,7 @@ export function App(): JSX.Element {
 
     // Todo dropped directly onto a category row (useSortable id wins over useDroppable)
     if (overId.startsWith('cat:')) {
-      await window.jot.setTodoCategory(todoId, overId.slice('cat:'.length))
+      await jotApi().setTodoCategory(todoId, overId.slice('cat:'.length))
       return
     }
 
@@ -502,7 +509,7 @@ export function App(): JSX.Element {
       const dragged = state.todos.find((t) => t.id === todoId)
       const target = state.todos.find((t) => t.id === overId)
       if (dragged !== undefined && target !== undefined && dragged.priority !== target.priority) {
-        await window.jot.setTodoPriority(todoId, target.priority)
+        await jotApi().setTodoPriority(todoId, target.priority)
         return
       }
       // Reorder within the same band/list
@@ -510,7 +517,7 @@ export function App(): JSX.Element {
       const newIndex = openIds.indexOf(overId)
       if (oldIndex !== -1 && newIndex !== -1) {
         const newOrder = arrayMove(openIds, oldIndex, newIndex)
-        await window.jot.reorderTodos(newOrder)
+        await jotApi().reorderTodos(newOrder)
       }
     }
   }
@@ -602,10 +609,10 @@ export function App(): JSX.Element {
             filter={filter}
             onFilter={setFilter}
             onAddCategory={(name) => {
-              window.jot.addCategory(name)
+              jotApi().addCategory(name)
             }}
             onRenameCategory={(id, name) => {
-              window.jot.renameCategory(id, name)
+              jotApi().renameCategory(id, name)
             }}
             onRemoveCategory={(id) => {
               setPendingDeleteCatId(id)
@@ -618,7 +625,7 @@ export function App(): JSX.Element {
                 current === 'private' ? 'work' : current === 'work' ? null : 'private'
               const backward =
                 current === 'work' ? 'private' : current === 'private' ? null : 'work'
-              window.jot.setCategoryDomain(id, back ? backward : forward)
+              jotApi().setCategoryDomain(id, back ? backward : forward)
             }}
             domainFilter={domainFilter}
             onDomainFilterChange={setDomainFilter}
@@ -775,8 +782,8 @@ export function App(): JSX.Element {
                                 showCategoryTag={filter === 'all'}
                                 editingId={editingTodoId}
                                 sortable={sortMode === 'manual'}
-                                onSetStatus={(id, status) => window.jot.setStatus(id, status)}
-                                onRemove={(id) => window.jot.removeTodo(id)}
+                                onSetStatus={(id, status) => jotApi().setStatus(id, status)}
+                                onRemove={(id) => jotApi().removeTodo(id)}
                                 onSelect={toggleSelectTodo}
                                 onStartEdit={setEditingTodoId}
                                 onStopEdit={() => setEditingTodoId(null)}
@@ -807,7 +814,7 @@ export function App(): JSX.Element {
                           title="Move completed to archive.json (keeps history)"
                           onClick={(e) => {
                             e.stopPropagation()
-                            window.jot.archiveCompleted().then((count) => {
+                            jotApi().archiveCompleted().then((count) => {
                               if (count > 0) {
                                 setToast(`Archived ${count}`)
                               }
@@ -820,7 +827,7 @@ export function App(): JSX.Element {
                           className="link-button"
                           onClick={(e) => {
                             e.stopPropagation()
-                            window.jot.clearCompleted()
+                            jotApi().clearCompleted()
                           }}
                         >
                           Clear
@@ -837,7 +844,7 @@ export function App(): JSX.Element {
                                   type="checkbox"
                                   checked={todo.status === 'done'}
                                   onChange={() => {
-                                    window.jot.setStatus(todo.id, 'open')
+                                    jotApi().setStatus(todo.id, 'open')
                                   }}
                                 />
                                 <span className="todo-text">{todo.text}</span>
@@ -846,7 +853,7 @@ export function App(): JSX.Element {
                                 className="remove-button"
                                 title="Delete"
                                 onClick={() => {
-                                  window.jot.removeTodo(todo.id)
+                                  jotApi().removeTodo(todo.id)
                                 }}
                               >
                                 ×
@@ -915,7 +922,7 @@ export function App(): JSX.Element {
           confirmLabel="Delete"
           danger
           onConfirm={() => {
-            window.jot.removeCategory(pendingDeleteCat.id)
+            jotApi().removeCategory(pendingDeleteCat.id)
             setPendingDeleteCatId(null)
           }}
           onCancel={() => setPendingDeleteCatId(null)}
@@ -965,9 +972,9 @@ function FolderControl({ category }: { category: Category }): JSX.Element {
   const repoPath = category.repoPath ?? null
 
   async function pickAndSet(): Promise<void> {
-    const chosen = await window.jot.pickFolder(repoPath ?? undefined)
+    const chosen = await jotApi().pickFolder(repoPath ?? undefined)
     if (chosen) {
-      window.jot.setCategoryRepoPath(category.id, chosen)
+      jotApi().setCategoryRepoPath(category.id, chosen)
     }
   }
 
@@ -989,7 +996,7 @@ function FolderControl({ category }: { category: Category }): JSX.Element {
         className="folder-control-clear"
         title="Unlink folder"
         onClick={() => {
-          window.jot.setCategoryRepoPath(category.id, '')
+          jotApi().setCategoryRepoPath(category.id, '')
         }}
       >
         ×

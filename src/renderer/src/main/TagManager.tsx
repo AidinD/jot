@@ -1,3 +1,4 @@
+import { jotApi } from '../jotApiClient'
 import { useEffect, useState } from 'react'
 import type { Tag } from '@shared/types'
 
@@ -43,7 +44,7 @@ export function TagManager({ tags, onClose }: TagManagerProps): JSX.Element {
     if (name.length === 0) {
       return
     }
-    void window.jot.addTag(name, newColor, '')
+    void jotApi().addTag(name, newColor, '')
     setNewName('')
     setNewColor(TAG_PALETTE[0])
   }
@@ -69,7 +70,7 @@ export function TagManager({ tags, onClose }: TagManagerProps): JSX.Element {
                     className={`tag-swatch${tag.color === color ? ' active' : ''}`}
                     style={{ background: color }}
                     title={color}
-                    onClick={() => window.jot.updateTag(tag.id, { color })}
+                    onClick={() => jotApi().updateTag(tag.id, { color })}
                   />
                 ))}
               </div>
@@ -77,18 +78,18 @@ export function TagManager({ tags, onClose }: TagManagerProps): JSX.Element {
                 className="tag-name-input"
                 defaultValue={tag.name}
                 placeholder="Name"
-                onBlur={(e) => window.jot.updateTag(tag.id, { name: e.target.value })}
+                onBlur={(e) => jotApi().updateTag(tag.id, { name: e.target.value })}
               />
               <input
                 className="tag-desc-input"
                 defaultValue={tag.description}
                 placeholder="Hover text…"
-                onBlur={(e) => window.jot.updateTag(tag.id, { description: e.target.value })}
+                onBlur={(e) => jotApi().updateTag(tag.id, { description: e.target.value })}
               />
               <button
                 className="tag-delete"
                 title="Delete tag"
-                onClick={() => window.jot.removeTag(tag.id)}
+                onClick={() => jotApi().removeTag(tag.id)}
               >
                 ×
               </button>
