@@ -53,6 +53,20 @@ Sync Jot's todos to a third-party task service that already solves sharing + mob
 
 The split we just did is what makes B cheap on the *client* side (it's one more `StorageAdapter`); the cost is the backend and the product decisions, not Jot's code.
 
+## Refinement 2026-07-18 (Aidin's steer): provider-agnostic, not Jot-as-backend
+
+Aidin's real driver: for Helm to work on multi-user PROJECTS, tasks must be assignable + synced, like Jira - and ideally users aren't locked to Jot; they could link to Jira etc.
+
+The sharper direction this points to - and the recommendation:
+
+- **Do NOT make Jot itself a multi-user backend.** Assign + sync + permissions + presence = rebuilding Jira. Aidin already has Jira in the ecosystem (the Atlassian MCP, Crewline). For a team project, let Jira be the source of truth - assignment + sync come for free from it.
+- **Agnostic BY INTERFACE, at the Helm/auto-captain layer (NOT inside @jot/core).** Define a lean `TaskProvider` interface: list tasks, a mapped lifecycle status, assignee, project, and update status/assignment. `JotProvider` = the personal host store (exists). `JiraProvider` = via the Atlassian MCP. The auto-captain works against the interface, so it picks up + dispatches tasks regardless of source. Jot stays the personal fast-capture tool; team projects run off Jira.
+- **The trap to avoid:** a universal all-providers mapper. Jot's model (kanban statuses, categories, tags, priority bands, subtasks) and Jira's (issues, sprints, epics, workflows) differ enough that a generic "sync everything" layer becomes either lowest-common-denominator (loses both) or an endless maintenance burden of lossy per-provider mappings. Keep the interface deliberately MINIMAL, and build ONLY the providers actually used (Jot + Jira first) - not a mapper for all of them. That's what keeps it "not too big".
+
+This is smaller than making Jot multi-user, and it separates cleanly: Jot = personal + simple; the agnostic task layer = Helm's orchestration; the team backend = Jira (or whatever the team already uses).
+
+Still open: how far to go now (a Jira-read + auto-dispatch slice is a small, high-value first cut), and whether personal multi-device (a Cloudflare adapter) is wanted in parallel or later.
+
 ## Open questions for Aidin
 
 - Which rung is the real want - your own multi-device, or actually letting other people into your lists?
