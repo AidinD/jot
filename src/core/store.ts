@@ -78,6 +78,7 @@ export class TodoStore {
       deadline,
       parentId: null,
       createdAt: Date.now(),
+      updatedAt: Date.now(),
       completedAt: null
     }
     // Newest items land on top, per the quick-capture flow.
@@ -108,6 +109,7 @@ export class TodoStore {
       deadline: null,
       parentId,
       createdAt: Date.now(),
+      updatedAt: Date.now(),
       completedAt: null
     }
     this.state.todos = [subtask, ...this.state.todos]
@@ -123,6 +125,7 @@ export class TodoStore {
       return {
         ...todo,
         status,
+        updatedAt: Date.now(),
         completedAt: status === 'done' ? Date.now() : null
       }
     })
@@ -145,7 +148,7 @@ export class TodoStore {
       if (todo.id !== id) {
         return todo
       }
-      return { ...todo, priority: Math.trunc(priority) }
+      return { ...todo, priority: Math.trunc(priority), updatedAt: Date.now() }
     })
     await this.persist()
   }
@@ -155,7 +158,7 @@ export class TodoStore {
       if (todo.id !== id) {
         return todo
       }
-      return { ...todo, deadline }
+      return { ...todo, deadline, updatedAt: Date.now() }
     })
     await this.persist()
   }
@@ -172,7 +175,8 @@ export class TodoStore {
       return {
         ...todo,
         text,
-        description: patch.description !== undefined ? patch.description : todo.description
+        description: patch.description !== undefined ? patch.description : todo.description,
+        updatedAt: Date.now()
       }
     })
     await this.persist()
@@ -213,7 +217,8 @@ export class TodoStore {
       }
       return {
         ...todo,
-        images: [...todo.images, relativePath]
+        images: [...todo.images, relativePath],
+        updatedAt: Date.now()
       }
     })
     await this.persist()
@@ -227,7 +232,8 @@ export class TodoStore {
       }
       return {
         ...todo,
-        images: todo.images.filter((p) => p !== imagePath)
+        images: todo.images.filter((p) => p !== imagePath),
+        updatedAt: Date.now()
       }
     })
     await this.persist()
@@ -257,7 +263,7 @@ export class TodoStore {
       if (todo.id !== id) {
         return todo
       }
-      return { ...todo, categoryId }
+      return { ...todo, categoryId, updatedAt: Date.now() }
     })
     await this.persist()
   }
@@ -508,7 +514,7 @@ export class TodoStore {
       if (todo.id !== todoId) {
         return todo
       }
-      return { ...todo, tags: cleaned }
+      return { ...todo, tags: cleaned, updatedAt: Date.now() }
     })
     await this.persist()
   }
