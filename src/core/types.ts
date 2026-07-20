@@ -14,6 +14,10 @@ export interface Todo {
   // subtask cannot itself have subtasks.
   parentId: string | null
   createdAt: number
+  // Last time the todo's own content/state changed (status, priority, deadline,
+  // text/description, category, tags, images). NOT touched by reordering. Defaults
+  // to createdAt for todos written before this field existed.
+  updatedAt: number
   completedAt: number | null
 }
 

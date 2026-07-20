@@ -175,6 +175,10 @@ export function DetailPanel({
   }
 
   const created = new Date(todo.createdAt)
+  const updated = new Date(todo.updatedAt)
+  // Only show "Updated" when it's meaningfully after creation (a same-second value
+  // is just the create, and pre-updatedAt todos default updatedAt to createdAt).
+  const showUpdated = todo.updatedAt - todo.createdAt > 1000
   const completed = todo.completedAt ? new Date(todo.completedAt) : null
 
   return (
@@ -362,6 +366,9 @@ export function DetailPanel({
 
       <div className="detail-meta">
         <span>Created {created.toLocaleDateString()} {created.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        {showUpdated ? (
+          <span>Updated {updated.toLocaleDateString()} {updated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+        ) : null}
         {completed ? (
           <span>Completed {completed.toLocaleDateString()} {completed.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
         ) : null}

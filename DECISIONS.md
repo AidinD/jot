@@ -3,6 +3,21 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-07-18 — Todos carry an updatedAt
+
+Added `updatedAt` to the Todo model, set by every CONTENT mutation (status,
+priority, deadline, text/description, category, tags, images) but NOT by
+reordering (position isn't a content change) - so "last touched" reflects real
+edits, not drag-sorts.
+Migration: todos written before the field default `updatedAt` to their `createdAt`
+(in normalizeTodo), so "updated" is never blank or wrongly "now" on first load.
+Shown in the detail panel next to Created, only when it's meaningfully after
+creation (>1s), so a just-created todo doesn't show a redundant "Updated".
+Note: the "drag-and-drop sorting within a priority" part of the same ask already
+existed - the board groups Open into priority bands and, in the default Manual
+sort mode, drag reorders within a band (cross-band drops adopt the target's
+priority). No change needed there.
+
 ## 2026-07-18 — Split into core + UI (one repo, workspace packages)
 
 Jot is being split into a `@jot/core` (data + logic + events) and a `@jot/ui` (React component) so that BOTH the standalone Jot shell AND a coming Jot tab inside Helm can mount the SAME implementation - "one Jot, two mounts", never two diverging copies.

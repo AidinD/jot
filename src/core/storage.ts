@@ -59,6 +59,14 @@ function normalizeTodo(raw: any): Todo {
     deadline: typeof raw.deadline === 'number' ? raw.deadline : null,
     parentId: typeof raw.parentId === 'string' ? raw.parentId : null,
     createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : Date.now(),
+    // Pre-existing todos (written before updatedAt) default to their createdAt,
+    // so "updated" is never blank or wrongly "now" on first load.
+    updatedAt:
+      typeof raw.updatedAt === 'number'
+        ? raw.updatedAt
+        : typeof raw.createdAt === 'number'
+          ? raw.createdAt
+          : Date.now(),
     completedAt: typeof raw.completedAt === 'number' ? raw.completedAt : null
   }
 }
