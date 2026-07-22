@@ -360,6 +360,31 @@ body {
   background: var(--surface);
   border: 1px solid transparent;
   cursor: pointer;
+  position: relative;
+}
+
+/* Manual-reorder insertion line (task 67ebdd45): a clear accent bar at the edge
+   the dragged row will land on, so the drop position is never ambiguous. Drawn
+   with a leading dot (via box-shadow) so it reads as a caret, not a border. */
+.todo-row.drop-before::before,
+.todo-row.drop-after::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  z-index: 5;
+  box-shadow: -6px 0 0 -1px var(--accent);
+}
+
+.todo-row.drop-before::before {
+  top: -4px;
+}
+
+.todo-row.drop-after::after {
+  bottom: -4px;
 }
 
 .todo-row:hover {

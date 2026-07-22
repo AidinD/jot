@@ -9,7 +9,7 @@ import {
   useSensor,
   useSensors
 } from '@dnd-kit/core'
-import type { CollisionDetection, DragEndEvent, DragStartEvent } from '@dnd-kit/core'
+import type { CollisionDetection, DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Category, JotState, Tag, Todo, TodoStatus } from '@shared/types'
 import { normalize, stripTrailingHashtag, TRAILING_HASHTAG } from '@shared/hashtag'
@@ -101,6 +101,12 @@ export function App(): JSX.Element {
   const dateSuggestionsRef = useRef<DateSuggestionsHandle>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  // The row a manual-reorder drag is currently over, plus which edge the item
+  // would land on - drives a clear insertion line so the drop position is
+  // unambiguous (task 67ebdd45: "det borde vara en tydlig visuell markör på var
+  // den kommer hamna"). Only set for todo-over-todo reorders, not cross-list/
+  // status/band drops (those show their own droppable highlight).
+  const [dropTarget, setDropTarget] = useState<{ id: string; edge: 'top' | 'bottom' } | null>(null)
 
   const [viewMode, setViewMode] = useState<'list' | 'board'>(
     () => (localStorage.getItem('jot:viewMode') as 'list' | 'board') || 'list'
@@ -427,8 +433,39 @@ export function App(): JSX.Element {
     setActiveId(String(event.active.id))
   }
 
+  // Track the insertion point during a drag so the list can draw a line at the
+  // exact spot the row will land. Cleared for anything that isn't a same-list
+  // todo reorder (cross-list / status column / priority band have their own
+  // highlight, so a line there would be misleading).
+  function handleDragOver(event: DragOverEvent): void {
+    const { active, over } = event
+    if (over === null || String(active.id) === String(over.id)) {
+      setDropTarget(null)
+      return
+    }
+    const overId = String(over.id)
+    if (overId.startsWith('drop:') || overId.startsWith('cat:')) {
+      setDropTarget(null)
+      return
+    }
+    const activeRect = active.rect.current.translated
+    if (activeRect === null || activeRect === undefined) {
+      setDropTarget(null)
+      return
+    }
+    const activeCenter = activeRect.top + activeRect.height / 2
+    const overCenter = over.rect.top + over.rect.height / 2
+    setDropTarget({ id: overId, edge: activeCenter < overCenter ? 'top' : 'bottom' })
+  }
+
+  function handleDragCancel(): void {
+    setActiveId(null)
+    setDropTarget(null)
+  }
+
   async function handleDragEnd(event: DragEndEvent): Promise<void> {
     setActiveId(null)
+    setDropTarget(null)
     const { active, over } = event
     if (over === null) {
       return
@@ -600,6 +637,8 @@ export function App(): JSX.Element {
         sensors={sensors}
         collisionDetection={collisionDetectionStrategy}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragCancel={handleDragCancel}
         onDragEnd={handleDragEnd}
       >
         <div className="body">
@@ -782,6 +821,7 @@ export function App(): JSX.Element {
                                 showCategoryTag={filter === 'all'}
                                 editingId={editingTodoId}
                                 sortable={sortMode === 'manual'}
+                                dropEdge={dropTarget?.id === todo.id ? dropTarget.edge : null}
                                 onSetStatus={(id, status) => jotApi().setStatus(id, status)}
                                 onRemove={(id) => jotApi().removeTodo(id)}
                                 onSelect={toggleSelectTodo}
