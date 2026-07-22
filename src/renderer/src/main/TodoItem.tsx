@@ -18,6 +18,7 @@ interface TodoItemProps {
   showCategoryTag: boolean
   editingId: string | null
   sortable: boolean
+  dropEdge: 'top' | 'bottom' | null
   onSetStatus: (id: string, status: TodoStatus) => void
   onRemove: (id: string) => void
   onSelect: (id: string) => void
@@ -33,6 +34,7 @@ export function TodoItem({
   showCategoryTag,
   editingId,
   sortable,
+  dropEdge,
   onSetStatus,
   onRemove,
   onSelect,
@@ -90,7 +92,7 @@ export function TodoItem({
       <li
         ref={setNodeRef}
         style={style}
-        className={`${rowClass}${sortable && !isEditing ? ' draggable' : ''}`}
+        className={`${rowClass}${sortable && !isEditing ? ' draggable' : ''}${dropEdge === 'top' ? ' drop-before' : dropEdge === 'bottom' ? ' drop-after' : ''}`}
         onClick={() => {
           if (!isEditing) {
             onSelect(todo.id)
