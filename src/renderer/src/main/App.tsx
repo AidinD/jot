@@ -21,7 +21,7 @@ import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
 import { DetailPanel } from './DetailPanel'
-import { BoardView } from './BoardView'
+import { BoardView, boardColumnOrder } from './BoardView'
 import { SortMenu } from './SortMenu'
 import { ConfirmModal } from './ConfirmModal'
 import { TagManager } from './TagManager'
@@ -433,29 +433,55 @@ export function App(): JSX.Element {
     setActiveId(String(event.active.id))
   }
 
+  // The visual order a reorder is happening WITHIN: one board column's cards in
+  // board mode, the open list in list mode. Both the marker (handleDragOver) and
+  // the drop (handleDragEnd) read this same order, so what you see is what lands.
+  function reorderContextIds(overId: string): string[] {
+    if (viewMode !== 'board') {
+      return openIds
+    }
+    const target = state.todos.find((t) => t.id === overId)
+    if (target === undefined) {
+      return []
+    }
+    return boardColumnOrder(visible, target.status)
+  }
+
   // Track the insertion point during a drag so the list can draw a line at the
-  // exact spot the row will land. Cleared for anything that isn't a same-list
-  // todo reorder (cross-list / status column / priority band have their own
-  // highlight, so a line there would be misleading).
+  // exact spot the row will land.
+  //
+  // The edge comes from the ORDER INDICES, not from measuring rects: dnd-kit has
+  // already shifted the rows visually by the time this fires, so a rect-based
+  // comparison marks a different slot than the one arrayMove actually drops into
+  // (that mismatch is what made the marker read as wrong//misleading). Index
+  // logic mirrors handleDragEnd's arrayMove exactly - dragging DOWN lands after
+  // the row you're over, dragging UP lands before it.
   function handleDragOver(event: DragOverEvent): void {
     const { active, over } = event
-    if (over === null || String(active.id) === String(over.id)) {
+    if (over === null) {
       setDropTarget(null)
       return
     }
+    const activeId = String(active.id)
     const overId = String(over.id)
+    if (activeId === overId || activeId.startsWith('cat:')) {
+      setDropTarget(null)
+      return
+    }
     if (overId.startsWith('drop:') || overId.startsWith('cat:')) {
+      // A band / list / status droppable rather than a row. Keep the last row
+      // marker instead of blanking it - the pointer crosses these gaps
+      // constantly mid-drag and clearing here made the line flicker.
+      return
+    }
+    const order = reorderContextIds(overId)
+    const activeIndex = order.indexOf(activeId)
+    const overIndex = order.indexOf(overId)
+    if (activeIndex === -1 || overIndex === -1) {
       setDropTarget(null)
       return
     }
-    const activeRect = active.rect.current.translated
-    if (activeRect === null || activeRect === undefined) {
-      setDropTarget(null)
-      return
-    }
-    const activeCenter = activeRect.top + activeRect.height / 2
-    const overCenter = over.rect.top + over.rect.height / 2
-    setDropTarget({ id: overId, edge: activeCenter < overCenter ? 'top' : 'bottom' })
+    setDropTarget({ id: overId, edge: activeIndex < overIndex ? 'bottom' : 'top' })
   }
 
   function handleDragCancel(): void {
@@ -545,6 +571,25 @@ export function App(): JSX.Element {
       // instead of reordering across the divider.
       const dragged = state.todos.find((t) => t.id === todoId)
       const target = state.todos.find((t) => t.id === overId)
+      // Board mode reorders WITHIN a column (task 67ebdd45 - board cards had no
+      // order at all before, so a drop could only change status/priority).
+      if (viewMode === 'board' && dragged !== undefined && target !== undefined) {
+        if (dragged.status !== target.status) {
+          await jotApi().setStatus(todoId, target.status)
+          return
+        }
+        if (dragged.priority !== target.priority) {
+          await jotApi().setTodoPriority(todoId, target.priority)
+          return
+        }
+        const colIds = boardColumnOrder(visible, target.status)
+        const oldIndex = colIds.indexOf(todoId)
+        const newIndex = colIds.indexOf(overId)
+        if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+          await jotApi().reorderTodos(arrayMove(colIds, oldIndex, newIndex))
+        }
+        return
+      }
       if (dragged !== undefined && target !== undefined && dragged.priority !== target.priority) {
         await jotApi().setTodoPriority(todoId, target.priority)
         return
@@ -795,6 +840,7 @@ export function App(): JSX.Element {
                 tagsById={tagsById}
                 subtasksByParent={subtasksByParent}
                 onSelect={toggleSelectTodo}
+                dropTarget={dropTarget}
               />
             ) : (
               <>

@@ -1,6 +1,7 @@
 import { jotApi } from '../jotApiClient'
 import { useState } from 'react'
-import { useDroppable, useDraggable } from '@dnd-kit/core'
+import { useDroppable } from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
@@ -25,6 +26,22 @@ function groupByPriority(todos: Todo[]): { priority: number; todos: Todo[] }[] {
     .map((priority) => ({ priority, todos: byPriority.get(priority) ?? [] }))
 }
 
+/**
+ * The ids of one column's cards in the exact order they are rendered (bands
+ * flattened). Shared with App so the drag handlers reason about the SAME order
+ * the user sees - board reordering used to not exist at all, so there was no
+ * order to agree on (task 67ebdd45: sorting/marker were missing in board mode,
+ * which is where Aidin actually sorts).
+ */
+export function boardColumnOrder(todos: Todo[], status: TodoStatus): string[] {
+  const columnTodos = todos.filter((t) => t.status === status)
+  const bands = status === 'open' ? groupByPriority(columnTodos) : null
+  if (bands !== null && bands.length > 1) {
+    return bands.flatMap((band) => band.todos.map((t) => t.id))
+  }
+  return columnTodos.map((t) => t.id)
+}
+
 const COLUMNS: { status: TodoStatus; label: string }[] = [
   { status: 'open', label: 'Open' },
   { status: 'in-progress', label: 'In Progress' },
@@ -38,6 +55,7 @@ interface BoardViewProps {
   tagsById: Map<string, Tag>
   subtasksByParent: Map<string, Todo[]>
   onSelect: (id: string) => void
+  dropTarget: { id: string; edge: 'top' | 'bottom' } | null
 }
 
 export function BoardView({
@@ -45,7 +63,8 @@ export function BoardView({
   categoriesById,
   tagsById,
   subtasksByParent,
-  onSelect
+  onSelect,
+  dropTarget
 }: BoardViewProps): JSX.Element {
   return (
     <div className="board">
@@ -57,10 +76,12 @@ export function BoardView({
             status={col.status}
             label={col.label}
             todos={columnTodos}
+            orderedIds={boardColumnOrder(todos, col.status)}
             categoriesById={categoriesById}
             tagsById={tagsById}
             subtasksByParent={subtasksByParent}
             onSelect={onSelect}
+            dropTarget={dropTarget}
           />
         )
       })
@@ -73,18 +94,22 @@ function BoardColumn({
   status,
   label,
   todos,
+  orderedIds,
   categoriesById,
   tagsById,
   subtasksByParent,
-  onSelect
+  onSelect,
+  dropTarget
 }: {
   status: TodoStatus
   label: string
   todos: Todo[]
+  orderedIds: string[]
   categoriesById: Map<string, Category>
   tagsById: Map<string, Tag>
   subtasksByParent: Map<string, Todo[]>
   onSelect: (id: string) => void
+  dropTarget: { id: string; edge: 'top' | 'bottom' } | null
 }): JSX.Element {
   const { setNodeRef, isOver } = useDroppable({ id: `drop:status:${status}` })
 
@@ -98,6 +123,7 @@ function BoardColumn({
         tagsById={tagsById}
         subtasks={subtasksByParent.get(todo.id) ?? []}
         onSelect={onSelect}
+        dropEdge={dropTarget !== null && dropTarget.id === todo.id ? dropTarget.edge : null}
       />
     )
   }
@@ -133,16 +159,18 @@ function BoardColumn({
         ref={setNodeRef}
         className={`board-column-body${isOver ? ' drop-over' : ''}`}
       >
-        {showBands && priorityBands !== null
-          ? priorityBands.map((band) => {
-              return (
-                <PriorityBand key={band.priority} priority={band.priority} className="board-prio-band">
-                  <div className="priority-divider">{priorityLabel(band.priority)}</div>
-                  {band.todos.map((todo) => renderCard(todo))}
-                </PriorityBand>
-              )
-            })
-          : todos.map((todo) => renderCard(todo))}
+        <SortableContext items={orderedIds} strategy={verticalListSortingStrategy}>
+          {showBands && priorityBands !== null
+            ? priorityBands.map((band) => {
+                return (
+                  <PriorityBand key={band.priority} priority={band.priority} className="board-prio-band">
+                    <div className="priority-divider">{priorityLabel(band.priority)}</div>
+                    {band.todos.map((todo) => renderCard(todo))}
+                  </PriorityBand>
+                )
+              })
+            : todos.map((todo) => renderCard(todo))}
+        </SortableContext>
         {todos.length === 0 ? (
           <div style={{ fontSize: 12, color: 'var(--text-dim)', padding: '8px', textAlign: 'center' }}>
             No tasks
@@ -158,23 +186,30 @@ function BoardCard({
   cat,
   tagsById,
   subtasks,
-  onSelect
+  onSelect,
+  dropEdge
 }: {
   todo: Todo
   cat: Category | null
   tagsById: Map<string, Tag>
   subtasks: Todo[]
   onSelect: (id: string) => void
+  dropEdge: 'top' | 'bottom' | null
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false)
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  // useSortable, not useDraggable: a board card must have an ORDER within its
+  // column, otherwise dropping it can only change status/priority and never
+  // position - which is why intra-priority sorting simply did not exist in board
+  // mode (task 67ebdd45).
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: todo.id,
     data: { type: 'todo' }
   })
 
-  const style = transform ? {
+  const style = {
     transform: CSS.Translate.toString(transform),
-  } : undefined
+    transition
+  }
 
   const hasSubtasks = subtasks.length > 0
   const subtaskDoneCount = subtasks.filter((s) => s.status === 'done').length
@@ -185,7 +220,7 @@ function BoardCard({
       style={style}
       {...attributes}
       {...listeners}
-      className={`board-card${isDragging ? ' dragging' : ''}`}
+      className={`board-card${isDragging ? ' dragging' : ''}${dropEdge === 'top' ? ' drop-before' : dropEdge === 'bottom' ? ' drop-after' : ''}`}
       onClick={() => onSelect(todo.id)}
     >
       <button
