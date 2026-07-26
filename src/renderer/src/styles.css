@@ -364,26 +364,42 @@ body {
 }
 
 /* Manual-reorder insertion line (task 67ebdd45): a clear accent bar at the edge
-   the dragged row will land on, so the drop position is never ambiguous. Drawn
-   with a leading dot (via box-shadow) so it reads as a caret, not a border. */
+   the dragged row will land on, so the drop position is never ambiguous.
+   Deliberately NOT full-bleed and deliberately glowing: at 2px full width it read
+   as a section divider (the priority-band rule looks like that), which is exactly
+   why it went unnoticed. Inset + rounded + a soft halo makes it read as a live
+   insertion caret instead. */
 .todo-row.drop-before::before,
-.todo-row.drop-after::after {
+.todo-row.drop-after::after,
+.board-card.drop-before::before,
+.board-card.drop-after::after {
   content: '';
   position: absolute;
-  left: 6px;
-  right: 6px;
-  height: 2px;
+  left: 10px;
+  right: 10px;
+  height: 3px;
   background: var(--accent);
-  border-radius: 2px;
+  border-radius: 999px;
   z-index: 5;
-  box-shadow: -6px 0 0 -1px var(--accent);
+  box-shadow: 0 0 0 1px var(--bg), 0 0 10px 1px var(--accent);
 }
 
 .todo-row.drop-before::before {
-  top: -4px;
+  top: -5px;
 }
 
 .todo-row.drop-after::after {
+  bottom: -5px;
+}
+
+/* Board columns scroll (overflow-y) and their cards sit in a 6px gap, so the
+   marker is pulled in tighter than in the list - at -5px the first card's line
+   would be clipped by the scroll container. */
+.board-card.drop-before::before {
+  top: -4px;
+}
+
+.board-card.drop-after::after {
   bottom: -4px;
 }
 
