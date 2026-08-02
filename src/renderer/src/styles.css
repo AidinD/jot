@@ -363,6 +363,21 @@ body {
   position: relative;
 }
 
+/* A tag can ask for the whole row/card to be marked, not just its chip (see
+   TagEmphasis in core/types.ts). Used for the states where something is either
+   happening to a todo without you, or waiting on you - a chip is easy to miss
+   when scanning a full board, and those are the two cases you must not miss.
+
+   An INSET box-shadow, not a border and not a pseudo-element: a border would
+   shift the text by a pixel as the stripe appears and disappear under the card's
+   own hover border, and ::before/::after are already taken by the drag-insertion
+   caret. The colour is the tag's own, passed in as a custom property, so the
+   stylesheet owns the shape and the data owns only the hue. */
+.todo-row.tag-emphasised,
+.board-card.tag-emphasised {
+  box-shadow: inset 3px 0 0 0 var(--tag-emphasis-color);
+}
+
 /* Manual-reorder insertion line (task 67ebdd45): a clear accent bar at the edge
    the dragged row will land on, so the drop position is never ambiguous.
    Deliberately NOT full-bleed and deliberately glowing: at 2px full width it read

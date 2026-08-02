@@ -3,6 +3,26 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-08-02 — A tag can mark the whole row, and it is a tag property
+
+Aidin, while reviewing Helm's auto-captain: "undrar om vi borde ha en ram eller något runt hela kortet för att tydligare markera när ett kort är auto också".
+Helm writes tags onto this board - one meaning "a machine is spending money and touching a repo for this card right now", another meaning "this card is waiting on you".
+A chip is easy to miss when scanning a full board, and those two are the ones you must not miss.
+
+**Decided.** An optional `emphasis: 'stripe' | null` on the TAG. A todo carrying an emphasised tag gets a bar down its edge in that tag's colour, in both the list and the board.
+
+The important part is where the flag lives.
+The obvious implementation is `if (tag.name === 'auto-running')` in the card renderer, and that would be wrong: Jot is a general todo app, public and MIT-licensed, and hardcoding a private orchestrator's vocabulary into it means every new Helm tag needs a Jot release, while anyone else who clones Jot inherits a card style for a feature they do not have.
+As a property of the tag, any future tag gets the same treatment with no code change, and the person owns the choice through the tag manager.
+
+Three details that are not arbitrary:
+
+- **One winner, picked by the BOARD's tag order, not the todo's.** A todo's tag array is insertion order, so the same pair of tags applied in a different sequence would otherwise stripe two cards differently and the colour would stop meaning anything.
+- **An inset box-shadow, not a border and not a pseudo-element.** A border shifts the text by a pixel as the stripe appears and gets overridden by the card's own hover border; `::before`/`::after` are already taken by the drag-insertion caret.
+- **`normalizeTag` had to learn the field.** It strips unknown properties, so a flag written by an external tool would have appeared to work and then silently vanished on the next save. An unrecognised value collapses to `null` rather than reaching the renderer as a class name.
+
+Helm sets it on `auto-running` and `needs-clarification` but deliberately NOT on `auto`: "may be started automatically" is not an active state, and if twenty cards are tagged `auto` the stripe means nothing.
+
 ## 2026-07-18 — Todos carry an updatedAt
 
 Added `updatedAt` to the Todo model, set by every CONTENT mutation (status,

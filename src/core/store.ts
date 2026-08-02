@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { promises as fs } from 'fs'
 import { dirname, join, extname } from 'path'
-import type { Category, JotState, Tag, Todo, TodoStatus } from './types'
+import type { Category, JotState, Tag, TagEmphasis, Todo, TodoStatus } from './types'
 import type { StorageAdapter } from './storage'
 
 type ChangeListener = (state: JotState) => void
@@ -462,12 +462,18 @@ export class TodoStore {
     await this.persist()
   }
 
-  async addTag(name: string, color: string, description: string): Promise<string> {
+  async addTag(
+    name: string,
+    color: string,
+    description: string,
+    emphasis: TagEmphasis | null = null
+  ): Promise<string> {
     const tag: Tag = {
       id: randomUUID(),
       name: name.trim().length > 0 ? name.trim() : 'New tag',
       color,
-      description: description.trim()
+      description: description.trim(),
+      emphasis
     }
     this.state.tags = [...this.state.tags, tag]
     await this.persist()
@@ -476,7 +482,7 @@ export class TodoStore {
 
   async updateTag(
     id: string,
-    patch: { name?: string; color?: string; description?: string }
+    patch: { name?: string; color?: string; description?: string; emphasis?: TagEmphasis | null }
   ): Promise<void> {
     this.state.tags = this.state.tags.map((tag) => {
       if (tag.id !== id) {
@@ -487,7 +493,8 @@ export class TodoStore {
         ...tag,
         name: name.length > 0 ? name : tag.name,
         color: patch.color !== undefined ? patch.color : tag.color,
-        description: patch.description !== undefined ? patch.description.trim() : tag.description
+        description: patch.description !== undefined ? patch.description.trim() : tag.description,
+        emphasis: patch.emphasis !== undefined ? patch.emphasis : tag.emphasis
       }
     })
     await this.persist()

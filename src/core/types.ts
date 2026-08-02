@@ -38,6 +38,20 @@ export interface Category {
 }
 
 /**
+ * How strongly a tag marks the todos that carry it.
+ *
+ * `null` is the normal case: a coloured chip and nothing more. `'stripe'` draws
+ * a bar down the edge of the whole row or card in the tag's colour, so it reads
+ * at a glance across a full board rather than only when you look at the chips.
+ *
+ * This is a property of the TAG, deliberately - not a hardcoded list of special
+ * tag names. Jot has no opinion about which tags matter; the person (or the tool
+ * writing to the board) says so by setting this, and every future tag gets the
+ * same treatment with no code change.
+ */
+export type TagEmphasis = 'stripe'
+
+/**
  * A reusable label that can be applied to many todos. `description` is the
  * hover text shown on the tag chip.
  */
@@ -46,6 +60,8 @@ export interface Tag {
   name: string
   color: string
   description: string
+  /** See TagEmphasis. `null` means a plain chip. */
+  emphasis: TagEmphasis | null
 }
 
 /**
@@ -92,8 +108,16 @@ export interface JotApi {
   pickFolder: (defaultPath?: string) => Promise<string | null>
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>
-  addTag: (name: string, color: string, description: string) => Promise<string>
-  updateTag: (id: string, patch: { name?: string; color?: string; description?: string }) => Promise<void>
+  addTag: (
+    name: string,
+    color: string,
+    description: string,
+    emphasis?: TagEmphasis | null
+  ) => Promise<string>
+  updateTag: (
+    id: string,
+    patch: { name?: string; color?: string; description?: string; emphasis?: TagEmphasis | null }
+  ) => Promise<void>
   removeTag: (id: string) => Promise<void>
   setTodoTags: (todoId: string, tagIds: string[]) => Promise<void>
   addImage: (todoId: string) => Promise<void>

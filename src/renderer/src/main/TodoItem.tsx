@@ -1,10 +1,11 @@
 import { jotApi } from '../jotApiClient'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
 import { formatDeadline, isOverdue, isDueToday } from '@shared/deadline'
+import { emphasisFor } from '@shared/tagEmphasis'
 import { TagChips } from './TagChips'
 import { SubtaskList } from './SubtaskList'
 
@@ -77,13 +78,18 @@ export function TodoItem({
     onStopEdit()
   }
 
+  // A tag may ask for the whole row to be marked, not just its chip - see
+  // emphasisFor. The colour rides in as a custom property so the stylesheet owns
+  // the shape of the stripe and only its hue comes from the data.
+  const emphasis = emphasisFor(todo.tags, tagsById.values())
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.35 : 1
-  }
+    opacity: isDragging ? 0.35 : 1,
+    ...(emphasis !== null ? { '--tag-emphasis-color': emphasis.color } : {})
+  } as CSSProperties
 
-  const rowClass = `todo-row${isDone ? ' done' : ''}`
+  const rowClass = `todo-row${isDone ? ' done' : ''}${emphasis !== null ? ' tag-emphasised' : ''}`
   const hasSubtasks = subtasks.length > 0
   const subtaskDoneCount = subtasks.filter((s) => s.status === 'done').length
 

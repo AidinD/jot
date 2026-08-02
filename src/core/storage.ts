@@ -5,10 +5,10 @@ import type { Category, JotState, Tag, Todo, TodoStatus } from './types'
 // Seeded once, the first time a pre-tags file is loaded (when `tags` is absent).
 // Fixed ids so re-seeding never duplicates. The user can edit/delete/add freely.
 const DEFAULT_TAGS: Tag[] = [
-  { id: 'tag-blocked', name: 'Blocked', color: '#ff6b6b', description: 'Blocked by a dependency or external thing' },
-  { id: 'tag-waiting', name: 'Waiting', color: '#ffb054', description: 'Waiting on someone or something' },
-  { id: 'tag-urgent', name: 'Urgent', color: '#ff8c42', description: 'Needs attention soon' },
-  { id: 'tag-idea', name: 'Idea', color: '#b98cff', description: 'Rough idea, not committed yet' }
+  { id: 'tag-blocked', name: 'Blocked', color: '#ff6b6b', description: 'Blocked by a dependency or external thing', emphasis: null },
+  { id: 'tag-waiting', name: 'Waiting', color: '#ffb054', description: 'Waiting on someone or something', emphasis: null },
+  { id: 'tag-urgent', name: 'Urgent', color: '#ff8c42', description: 'Needs attention soon', emphasis: null },
+  { id: 'tag-idea', name: 'Idea', color: '#b98cff', description: 'Rough idea, not committed yet', emphasis: null }
 ]
 
 /**
@@ -96,7 +96,11 @@ function normalizeTag(raw: any): Tag {
     id: String(raw.id),
     name: repairDoubleEncoding(String(raw.name ?? '')),
     color: String(raw.color ?? '#9a9da3'),
-    description: repairDoubleEncoding(String(raw.description ?? ''))
+    description: repairDoubleEncoding(String(raw.description ?? '')),
+    // Unknown values collapse to null rather than being carried through: this
+    // normalizer is what an external writer's file passes through, and an
+    // unrecognised emphasis must not reach the renderer as a class name.
+    emphasis: raw.emphasis === 'stripe' ? 'stripe' : null
   }
 }
 
