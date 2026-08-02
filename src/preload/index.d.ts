@@ -1,4 +1,4 @@
-import type { JotState, TodoStatus } from '../core/types'
+import type { JotState, TagEmphasis, TodoStatus } from '../core/types'
 
 interface JotBridge {
   getState: () => Promise<JotState>
@@ -30,7 +30,7 @@ interface JotBridge {
   removeCategory: (id: string) => Promise<void>
   reorderCategories: (orderedIds: string[]) => Promise<void>
   addTag: (name: string, color: string, description: string) => Promise<string>
-  updateTag: (id: string, patch: { name?: string; color?: string; description?: string }) => Promise<void>
+  updateTag: (id: string, patch: { name?: string; color?: string; description?: string; emphasis?: TagEmphasis | null }) => Promise<void>
   removeTag: (id: string) => Promise<void>
   setTodoTags: (todoId: string, tagIds: string[]) => Promise<void>
   onChanged: (callback: (state: JotState) => void) => () => void

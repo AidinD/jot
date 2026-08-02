@@ -87,6 +87,21 @@ export function TagManager({ tags, onClose }: TagManagerProps): JSX.Element {
                 onBlur={(e) => jotApi().updateTag(tag.id, { description: e.target.value })}
               />
               <button
+                type="button"
+                className={`tag-emphasis-toggle${tag.emphasis === 'stripe' ? ' active' : ''}`}
+                title={
+                  tag.emphasis === 'stripe'
+                    ? 'Marks the whole row/card with a stripe - click to make it a plain chip'
+                    : 'Show only a chip - click to mark the whole row/card with a stripe'
+                }
+                aria-pressed={tag.emphasis === 'stripe'}
+                onClick={() =>
+                  jotApi().updateTag(tag.id, { emphasis: tag.emphasis === 'stripe' ? null : 'stripe' })
+                }
+              >
+                ▌
+              </button>
+              <button
                 className="tag-delete"
                 title="Delete tag"
                 onClick={() => jotApi().removeTag(tag.id)}

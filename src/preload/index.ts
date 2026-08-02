@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { JotState, TodoStatus } from '../core/types'
+import type { JotState, TagEmphasis, TodoStatus } from '../core/types'
 
 const jotApi = {
   getState: (): Promise<JotState> => {
@@ -81,7 +81,7 @@ const jotApi = {
   },
   updateTag: (
     id: string,
-    patch: { name?: string; color?: string; description?: string }
+    patch: { name?: string; color?: string; description?: string; emphasis?: TagEmphasis | null }
   ): Promise<void> => {
     return ipcRenderer.invoke('tags:update', id, patch)
   },

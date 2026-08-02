@@ -1,11 +1,12 @@
 import { jotApi } from '../jotApiClient'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { useDroppable } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
 import { formatDeadline, isOverdue, isDueToday } from '@shared/deadline'
+import { emphasisFor } from '@shared/tagEmphasis'
 import { TagChips } from './TagChips'
 import { PriorityBand } from './PriorityBand'
 import { SubtaskList } from './SubtaskList'
@@ -206,10 +207,14 @@ function BoardCard({
     data: { type: 'todo' }
   })
 
+  // Same whole-card marking as the list row, from the same shared rule so the
+  // two views cannot drift apart.
+  const emphasis = emphasisFor(todo.tags, tagsById.values())
   const style = {
     transform: CSS.Translate.toString(transform),
-    transition
-  }
+    transition,
+    ...(emphasis !== null ? { '--tag-emphasis-color': emphasis.color } : {})
+  } as CSSProperties
 
   const hasSubtasks = subtasks.length > 0
   const subtaskDoneCount = subtasks.filter((s) => s.status === 'done').length
@@ -220,7 +225,7 @@ function BoardCard({
       style={style}
       {...attributes}
       {...listeners}
-      className={`board-card${isDragging ? ' dragging' : ''}${dropEdge === 'top' ? ' drop-before' : dropEdge === 'bottom' ? ' drop-after' : ''}`}
+      className={`board-card${emphasis !== null ? ' tag-emphasised' : ''}${isDragging ? ' dragging' : ''}${dropEdge === 'top' ? ' drop-before' : dropEdge === 'bottom' ? ' drop-after' : ''}`}
       onClick={() => onSelect(todo.id)}
     >
       <button

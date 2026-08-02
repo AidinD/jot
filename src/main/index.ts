@@ -12,7 +12,7 @@ import { LocalJsonStorage, TodoStore } from '../core'
 import { resolveDataDir, migrateLegacyData } from './data-dir'
 import { loadPrefs, savePrefs } from './prefs'
 import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
-import type { TodoStatus } from '../core/types'
+import type { TagEmphasis, TodoStatus } from '../core/types'
 
 const CAPTURE_SHORTCUT = 'Control+Alt+.'
 
@@ -296,7 +296,7 @@ function registerIpc(): void {
   })
   ipcMain.handle(
     'tags:update',
-    (_event, id: string, patch: { name?: string; color?: string; description?: string }) => {
+    (_event, id: string, patch: { name?: string; color?: string; description?: string; emphasis?: TagEmphasis | null }) => {
       return store.updateTag(id, patch)
     }
   )
