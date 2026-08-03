@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { renderMarkdown } from '@shared/markdown'
 
 interface DescriptionModalProps {
   value: string
@@ -6,13 +7,15 @@ interface DescriptionModalProps {
 }
 
 /**
- * Full-size editor for a todo's description, opened by clicking the (small)
- * preview box in the detail panel. Autosaves like the rest of the panel — no
- * Cancel button, since closing any way (overlay click, Escape, the × button)
- * commits the current text.
+ * Full-size editor for a todo's description, opened by clicking the "Description"
+ * label in the detail panel. Autosaves like the rest of the panel — no Cancel
+ * button, since closing any way (overlay click, Escape, the × button) commits
+ * the current text. Text is markdown source; the Preview tab renders it the
+ * same way the collapsed panel preview does.
  */
 export function DescriptionModal({ value, onClose }: DescriptionModalProps): JSX.Element {
   const [draft, setDraft] = useState(value)
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const draftRef = useRef(draft)
   draftRef.current = draft
@@ -51,13 +54,36 @@ export function DescriptionModal({ value, onClose }: DescriptionModalProps): JSX
             ×
           </button>
         </div>
-        <textarea
-          ref={textareaRef}
-          className="description-modal-textarea"
-          placeholder="Add notes…"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-        />
+        <div className="description-modal-tabs">
+          <button
+            type="button"
+            className={`description-modal-tab${mode === 'edit' ? ' active' : ''}`}
+            onClick={() => setMode('edit')}
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            className={`description-modal-tab${mode === 'preview' ? ' active' : ''}`}
+            onClick={() => setMode('preview')}
+          >
+            Preview
+          </button>
+        </div>
+        {mode === 'edit' ? (
+          <textarea
+            ref={textareaRef}
+            className="description-modal-textarea"
+            placeholder="Add notes… (markdown supported)"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+          />
+        ) : (
+          <div
+            className="description-modal-textarea description-modal-preview markdown-body"
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(draft) }}
+          />
+        )}
       </div>
     </div>
   )
