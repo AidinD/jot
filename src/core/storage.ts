@@ -1,5 +1,6 @@
+import { randomBytes } from 'crypto'
 import { promises as fs, watch as watchFs, watchFile as watchFileFs, unwatchFile as unwatchFileFs } from 'fs'
-import { basename, dirname } from 'path'
+import { basename, dirname, join } from 'path'
 import type { Category, JotState, Tag, Todo, TodoStatus } from './types'
 
 // Seeded once, the first time a pre-tags file is loaded (when `tags` is absent).
@@ -10,6 +11,80 @@ const DEFAULT_TAGS: Tag[] = [
   { id: 'tag-urgent', name: 'Urgent', color: '#ff8c42', description: 'Needs attention soon', emphasis: null },
   { id: 'tag-idea', name: 'Idea', color: '#b98cff', description: 'Rough idea, not committed yet', emphasis: null }
 ]
+
+const MAX_WRITE_ATTEMPTS = 4
+
+/**
+ * Is this error "something else is holding the file right now", rather than a
+ * real failure?
+ *
+ * Windows reports BOTH a locked file and a permission-denied folder as EPERM, so
+ * the error code alone cannot tell them apart. `targetExists` is what separates
+ * them: you can only be fighting over a file that is already there. A folder we
+ * are not allowed to write in produces the same EPERM with no file at the end of
+ * it, and retrying that just delays a wrong answer.
+ */
+function isTransientLock(error: unknown, targetExists: boolean): boolean {
+  const code = (error as NodeJS.ErrnoException | null)?.code
+  if (code === 'EBUSY') {
+    return true // always a live handle on something
+  }
+  if (code === 'EPERM' || code === 'EACCES') {
+    return targetExists
+  }
+  return false
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Write `contents` to `filePath` atomically (temp file + rename), retrying while
+ * the target is momentarily locked.
+ *
+ * Windows refuses the rename with EPERM/EBUSY whenever another process holds the
+ * destination - Dropbox syncing the file (Jot's data dir normally lives in
+ * Dropbox), an antivirus scanner, or a search indexer. Without a retry that lost
+ * the whole write: observed in Helm's Jot bridge on 2026-08-03, where a plain
+ * status change failed with "EPERM ... rename" under a concurrent test run.
+ *
+ * Two details matter beyond the retry itself:
+ *  - the temp file gets a random suffix per attempt, so two writers never fight
+ *    over one fixed `todos.json.tmp`;
+ *  - the temp file is cleaned up on failure, so a crashed write leaves no litter.
+ *
+ * Still throws when the write genuinely cannot succeed - callers surface that.
+ */
+export async function writeFileAtomic(filePath: string, contents: string): Promise<void> {
+  const directoryPath = dirname(filePath)
+  const targetName = basename(filePath)
+  await fs.mkdir(directoryPath, { recursive: true })
+
+  for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt++) {
+    const tempPath = join(directoryPath, `.${targetName}.${randomBytes(4).toString('hex')}.tmp`)
+    try {
+      await fs.writeFile(tempPath, contents, 'utf-8')
+      await fs.rename(tempPath, filePath)
+      return
+    } catch (error) {
+      await fs.unlink(tempPath).catch(() => {
+        // best-effort cleanup; the write already failed
+      })
+      // Whether the destination already exists decides whether an EPERM is a
+      // lock worth waiting out or a permission problem worth reporting now.
+      const targetExists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false)
+      if (isTransientLock(error, targetExists) && attempt < MAX_WRITE_ATTEMPTS - 1) {
+        await delay(60 * (attempt + 1))
+        continue
+      }
+      throw error
+    }
+  }
+}
 
 /**
  * Storage seam. v1 ships a local JSON implementation, but the rest of the
@@ -153,10 +228,7 @@ export class LocalJsonStorage implements StorageAdapter {
   }
 
   async save(state: JotState): Promise<void> {
-    await fs.mkdir(dirname(this.filePath), { recursive: true })
-    const tempPath = `${this.filePath}.tmp`
-    await fs.writeFile(tempPath, JSON.stringify(state, null, 2), 'utf-8')
-    await fs.rename(tempPath, this.filePath)
+    await writeFileAtomic(this.filePath, JSON.stringify(state, null, 2))
   }
 
   watch(onChange: () => void): () => void {

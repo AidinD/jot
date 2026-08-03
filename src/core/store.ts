@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto'
 import { promises as fs } from 'fs'
 import { dirname, join, extname } from 'path'
 import type { Category, JotState, Tag, TagEmphasis, Todo, TodoStatus } from './types'
-import type { StorageAdapter } from './storage'
+import { writeFileAtomic, type StorageAdapter } from './storage'
 
 type ChangeListener = (state: JotState) => void
 
@@ -29,6 +29,14 @@ export class TodoStore {
   private stopWatching: (() => void) | null = null
   private reloadInFlight: Promise<void> | null = null
   private reloadQueued = false
+  // How many saves are currently on their way to disk, and whether a watch event
+  // arrived while one was. See reloadFromDisk() for why a reload must never run
+  // in that window.
+  private pendingWrites = 0
+  private reloadDeferred = false
+  // Bumped once per save. A reload compares it across its own read to detect a
+  // save that started and finished while the read was in flight.
+  private writeSeq = 0
 
   // dataDir: the absolute data directory (for image + archive paths), injected
   // by the shell so core stays electron-free (the shell owns data-dir resolution).
@@ -354,10 +362,7 @@ export class TodoStore {
     const stamped = completed.map((todo) => ({ ...todo, archivedAt: Date.now() }))
     const next = [...stamped, ...archived]
 
-    await fs.mkdir(dirname(archivePath), { recursive: true })
-    const tempPath = `${archivePath}.tmp`
-    await fs.writeFile(tempPath, JSON.stringify({ todos: next }, null, 2), 'utf-8')
-    await fs.rename(tempPath, archivePath)
+    await writeFileAtomic(archivePath, JSON.stringify({ todos: next }, null, 2))
 
     const archivedIds = new Set(completed.map((todo) => todo.id))
     this.state.todos = this.state.todos.filter((todo) => !archivedIds.has(todo.id))
@@ -541,8 +546,23 @@ export class TodoStore {
   }
 
   private async persist(): Promise<void> {
-    await this.storage.save(this.state)
+    // Every mutation applies to this.state first and calls persist() with no
+    // await in between, so incrementing here (synchronously) means there is no
+    // instant where an unsaved change is invisible to reloadFromDisk().
+    this.pendingWrites++
+    this.writeSeq++
+    try {
+      await this.storage.save(this.state)
+    } finally {
+      this.pendingWrites--
+    }
     this.notify()
+    // A watch event that arrived mid-write was deferred; now that disk and memory
+    // agree, run it - it may still carry a genuine external change.
+    if (this.pendingWrites === 0 && this.reloadDeferred) {
+      this.reloadDeferred = false
+      void this.reloadFromDisk()
+    }
   }
 
   private notify(): void {
@@ -552,6 +572,19 @@ export class TodoStore {
   }
 
   private async reloadFromDisk(): Promise<void> {
+    // A reload replaces this.state wholesale with what is on disk. If one of our
+    // own saves has not landed yet, that file is one revision behind memory, and
+    // reloading would silently revert the change the user just made - the status
+    // move, the tag, the reorder. The file watcher fires on our OWN writes too, so
+    // this is not a rare interleaving: any save slow enough to still be in flight
+    // 150ms later (a Windows lock retry, a Dropbox-synced folder, a loaded
+    // machine) hits it. Defer instead: persist() re-runs the reload once the file
+    // and memory agree.
+    if (this.pendingWrites > 0) {
+      this.reloadDeferred = true
+      return
+    }
+
     if (this.reloadInFlight !== null) {
       this.reloadQueued = true
       return this.reloadInFlight
@@ -559,7 +592,16 @@ export class TodoStore {
 
     this.reloadInFlight = (async () => {
       try {
+        const seq = this.writeSeq
         const loaded = await this.storage.load()
+        // A save started while we were reading the file, so this snapshot may be
+        // one revision behind memory - assigning it would revert that change.
+        // Throw the read away and queue another one (the finally block below
+        // re-runs us), which converges as soon as the writes stop.
+        if (this.pendingWrites > 0 || this.writeSeq !== seq) {
+          this.reloadQueued = true
+          return
+        }
         if (JSON.stringify(loaded) === JSON.stringify(this.state)) {
           return
         }
