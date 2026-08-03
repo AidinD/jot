@@ -57,6 +57,18 @@ export function DetailPanel({
     }
   }, [todo.id, todo.text, todo.description, todo.priority])
 
+  // Auto-grow the description textarea to fit its content, so a long note is
+  // fully visible instead of trapped behind an inner scrollbar. The CSS
+  // min-height sets the floor; this raises the ceiling to match the text.
+  useEffect(() => {
+    const el = descRef.current
+    if (el === null) {
+      return
+    }
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [description, todo.id])
+
   // Resolve image paths
   useEffect(() => {
     let active = true
