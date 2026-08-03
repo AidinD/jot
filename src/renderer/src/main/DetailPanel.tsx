@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { fromDateInputValue, toDateInputValue } from '@shared/deadline'
 import { SubtaskList } from './SubtaskList'
+import { DescriptionModal } from './DescriptionModal'
 
 const STATUS_OPTIONS: { value: TodoStatus; label: string }[] = [
   { value: 'open', label: 'Open' },
@@ -44,7 +45,7 @@ export function DetailPanel({
   const [priorityDraft, setPriorityDraft] = useState(String(todo.priority))
   const [imagePaths, setImagePaths] = useState<Map<string, string>>(new Map())
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
-  const descRef = useRef<HTMLTextAreaElement>(null)
+  const [descModalOpen, setDescModalOpen] = useState(false)
   const prevIdRef = useRef(todo.id)
 
   // Sync local state when the selected todo changes
@@ -56,18 +57,6 @@ export function DetailPanel({
       prevIdRef.current = todo.id
     }
   }, [todo.id, todo.text, todo.description, todo.priority])
-
-  // Auto-grow the description textarea to fit its content, so a long note is
-  // fully visible instead of trapped behind an inner scrollbar. The CSS
-  // min-height sets the floor; this raises the ceiling to match the text.
-  useEffect(() => {
-    const el = descRef.current
-    if (el === null) {
-      return
-    }
-    el.style.height = 'auto'
-    el.style.height = `${el.scrollHeight}px`
-  }, [description, todo.id])
 
   // Resolve image paths
   useEffect(() => {
@@ -144,9 +133,10 @@ export function DetailPanel({
     }
   }
 
-  function saveDescription(): void {
-    if (description !== todo.description) {
-      jotApi().updateTodo(todo.id, { description })
+  function saveDescription(next: string): void {
+    setDescription(next)
+    if (next !== todo.description) {
+      jotApi().updateTodo(todo.id, { description: next })
     }
   }
 
@@ -339,14 +329,26 @@ export function DetailPanel({
       ) : null}
 
       <span className="detail-section-label">Description</span>
-      <textarea
-        ref={descRef}
-        className="detail-description"
-        placeholder="Add notes…"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-        onBlur={saveDescription}
-      />
+      <button
+        type="button"
+        className="detail-description-preview"
+        onClick={() => setDescModalOpen(true)}
+      >
+        {description.length > 0 ? (
+          description
+        ) : (
+          <span className="detail-description-placeholder">Add notes…</span>
+        )}
+      </button>
+      {descModalOpen ? (
+        <DescriptionModal
+          value={description}
+          onClose={(next) => {
+            saveDescription(next)
+            setDescModalOpen(false)
+          }}
+        />
+      ) : null}
 
       <span className="detail-section-label">Images</span>
       <div className="detail-images">
