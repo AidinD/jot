@@ -3,6 +3,19 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-08-03 — Drop the manual reinstall-after-release step
+
+**A release is done once it's pushed — no more local reinstall.**
+- The 2026-06-26 "reinstall after every release" rule predates real auto-update
+  (added 2026-07-04). Since then the packaged app already checks for and
+  installs updates on every launch — a manual reinstall duplicates that.
+- Alternatives: keep reinstalling anyway as an extra regression check. Rejected
+  by Aidin (2026-08-03) — the auto-update path is the one users actually go
+  through, so it's the one worth trusting; a separate manual step doesn't catch
+  anything auto-update wouldn't also catch on the next launch.
+- CLAUDE.md's release section updated to match: push and let auto-update do
+  the rest.
+
 ## 2026-08-03 — A board write retries a locked file, and a reload never overwrites an unsaved change
 
 Helm's Jot bridge test went flaky under its parallel test runner, failing with `EPERM ... rename 'todos.json.tmp' -> 'todos.json'`.
@@ -201,13 +214,15 @@ Open packaging detail: module format. This repo is `type: module` (ESM), so `@jo
   normalize/migrate (todo text/description + category names), and `store.init()`
   persists once after load so the repaired file is written back on first launch.
 
-## 2026-06-26 — Reinstall after every release
+## 2026-06-26 — Reinstall after every release (superseded 2026-08-03)
 
 **Every new Jot release is installed locally before handoff.**
 - Alternatives: only publish the GitHub release, or leave local install manual.
 - Why: the installed Windows app is the real day-to-day runtime. Reinstalling
   after each release catches packaging and startup regressions immediately and
   keeps the machine in sync with the latest shipped build.
+- Superseded once real auto-update shipped (2026-07-04 below) — see the
+  2026-08-03 entry.
 
 ## 2026-07-04 — Real auto-update via electron-updater
 

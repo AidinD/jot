@@ -18,9 +18,10 @@ contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
 
 ## Release
 
-After every release, install the new build locally before handing off. The
-installed Windows app is the real day-to-day runtime, so reinstalling catches
-packaging and startup regressions immediately. (See DECISIONS.md, 2026-06-26.)
+Push the version bump + commit — that's the release. Jot has real auto-update
+(`electron-updater`, wired 2026-07-04); the installed app checks for and
+installs the new build on its own next launch, so a manual local reinstall is
+no longer needed. (See DECISIONS.md, 2026-08-03, superseding 2026-06-26.)
 
 ## Data & storage gotchas
 
