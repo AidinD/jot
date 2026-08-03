@@ -3,6 +3,37 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-08-03 — A board write retries a locked file, and a reload never overwrites an unsaved change
+
+Helm's Jot bridge test went flaky under its parallel test runner, failing with `EPERM ... rename 'todos.json.tmp' -> 'todos.json'`.
+Chasing it surfaced two separate ways a board write was silently lost, both in the write path every real mutation goes through - not just in the test.
+
+**1. The rename had no retry.**
+`LocalJsonStorage.save` wrote a temp file and renamed it over `todos.json`.
+On Windows that rename fails whenever another process holds the target - Dropbox syncing it (Jot's data dir normally IS in Dropbox), an antivirus scanner, a search indexer - and the error propagated as a lost write.
+
+**Decided.** A shared `writeFileAtomic(filePath, contents)` in `storage.ts` with a bounded retry: 4 attempts, 60/120/180ms backoff.
+Alternatives rejected: a lock file (a crash leaves it behind and wedges the app), and an unbounded retry (a real permission problem would hang instead of reporting).
+Two details are load-bearing.
+The temp file gets a random suffix per attempt, so two writers never fight over one fixed `todos.json.tmp`, and it is deleted when an attempt fails so a crashed write leaves no litter.
+An `EPERM` is only retried when the target file actually exists: Windows reports both "someone holds this file" and "you may not write in this folder" as `EPERM`, and retrying the second just delays a wrong answer.
+`store.ts`'s archive write had the same bare rename and now uses the same helper.
+This mirrors the fix Helm already made on its own side (`src/lib/atomicWrite.js`, 2026-07-27) - the same discipline, in the module that backs every board write.
+
+**2. A reload could revert an unsaved change - the actual root cause of the flake.**
+`TodoStore.reloadFromDisk` replaced in-memory state with whatever was on disk, with no regard for a save still in flight.
+The file watcher fires on our OWN writes too, so any save slow enough to still be running 150ms later - a lock retry, a Dropbox-synced folder, a loaded machine - meant the reload read a one-revision-old file and reverted the change the user had just made.
+In the test this showed up as a status move that simply did not happen; in the app it would be a card that snaps back.
+
+**Decided.** Reloads are gated on in-flight writes, in both directions.
+A reload arriving while a save is pending is deferred, and `persist()` re-runs it once the file and memory agree (so a genuine external change is never dropped, just delayed).
+A reload that STARTS clean but has a save begin while it is reading the file throws its snapshot away and reads again, detected with a per-save counter compared across the read.
+Alternative rejected: merging disk and memory per-todo.
+That needs per-field revisions to be correct and would turn a data layer that is deliberately "last writer wins on a whole file" into a CRDT - a much larger change than the problem justifies.
+
+Guarded by `scripts/test-write-lock-race.mjs`, which reproduces both failures deterministically: it holds a real handle on the target to force the lock, and drives a storage adapter with a slow `save()` whose watch fires mid-write.
+Verified against the pre-fix code (the add is lost outright) and by running Helm's parallel suite 8 times with no failure, where it previously failed roughly every other run.
+
 ## 2026-08-02 — A tag can mark the whole row, and it is a tag property
 
 Aidin, while reviewing Helm's auto-captain: "undrar om vi borde ha en ram eller något runt hela kortet för att tydligare markera när ett kort är auto också".
