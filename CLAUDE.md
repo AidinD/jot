@@ -18,10 +18,20 @@ contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
 
 ## Release
 
-Push the version bump + commit — that's the release. Jot has real auto-update
-(`electron-updater`, wired 2026-07-04); the installed app checks for and
-installs the new build on its own next launch, so a manual local reinstall is
-no longer needed. (See DECISIONS.md, 2026-08-03, superseding 2026-06-26.)
+A release is: bump the version, commit, push, THEN actually publish the build
+to GitHub — pushing the commit alone does not do this, there is no CI wired up.
+Publish with:
+
+```
+GH_TOKEN=$(gh auth token) npx electron-builder --win --publish always
+```
+
+This must be `electron-builder --publish`, never `npm run package` (produces
+an unpublished local installer only) and never a manual `gh release create`
+upload (wrong asset filename — see DECISIONS.md 2026-07-04 "Release-naming
+gotcha"). Once published, no manual local (re)install is needed — the
+installed app's `electron-updater` picks up the new version on its own next
+launch. (See DECISIONS.md, 2026-08-03, superseding 2026-06-26.)
 
 ## Data & storage gotchas
 
