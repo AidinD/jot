@@ -3,9 +3,10 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
-## 2026-08-03 — Drop the manual reinstall-after-release step
+## 2026-08-03 — Drop the manual reinstall-after-release step (but publishing is still required)
 
-**A release is done once it's pushed — no more local reinstall.**
+**No more local reinstall after a release — but the build still has to be
+*published* to GitHub, which pushing a commit alone does not do.**
 - The 2026-06-26 "reinstall after every release" rule predates real auto-update
   (added 2026-07-04). Since then the packaged app already checks for and
   installs updates on every launch — a manual reinstall duplicates that.
@@ -13,8 +14,17 @@ transcript for the step-by-step; this file is only the choices worth revisiting.
   by Aidin (2026-08-03) — the auto-update path is the one users actually go
   through, so it's the one worth trusting; a separate manual step doesn't catch
   anything auto-update wouldn't also catch on the next launch.
-- CLAUDE.md's release section updated to match: push and let auto-update do
-  the rest.
+- Caught immediately after landing this: releases 1.5.25 and 1.5.26 were built
+  with plain `npm run package` (no `--publish`) and committed/pushed, but never
+  uploaded to GitHub — `gh release list` still showed 1.5.24 as latest, so
+  Aidin's installed 1.5.25 correctly saw nothing to update to. There is no CI
+  wired up; a git push by itself never reaches GitHub Releases.
+- Fixed by actually publishing: `GH_TOKEN=$(gh auth token) npx electron-builder
+  --win --publish always` (see the 2026-07-04 "Release-naming gotcha" entry
+  below for why it must be this exact command, not `npm run package` or a
+  manual `gh release create`).
+- CLAUDE.md's release section now spells out the publish command explicitly,
+  not just "push and let auto-update do the rest".
 
 ## 2026-08-03 — A board write retries a locked file, and a reload never overwrites an unsaved change
 
