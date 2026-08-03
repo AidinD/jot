@@ -328,18 +328,21 @@ export function DetailPanel({
         </>
       ) : null}
 
-      <span className="detail-section-label">Description</span>
       <button
         type="button"
-        className="detail-description-preview"
+        className="detail-section-label detail-section-label-button"
         onClick={() => setDescModalOpen(true)}
+        title="Open in editor"
       >
+        Description
+      </button>
+      <div className="detail-description-preview">
         {description.length > 0 ? (
           description
         ) : (
           <span className="detail-description-placeholder">Add notes…</span>
         )}
-      </button>
+      </div>
       {descModalOpen ? (
         <DescriptionModal
           value={description}
