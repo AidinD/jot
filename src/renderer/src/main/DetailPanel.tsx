@@ -2,6 +2,7 @@ import { jotApi } from '../jotApiClient'
 import { useEffect, useRef, useState } from 'react'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { fromDateInputValue, toDateInputValue } from '@shared/deadline'
+import { renderMarkdown } from '@shared/markdown'
 import { SubtaskList } from './SubtaskList'
 import { DescriptionModal } from './DescriptionModal'
 
@@ -336,13 +337,16 @@ export function DetailPanel({
       >
         Description
       </button>
-      <div className="detail-description-preview">
-        {description.length > 0 ? (
-          description
-        ) : (
+      {description.length > 0 ? (
+        <div
+          className="detail-description-preview markdown-body"
+          dangerouslySetInnerHTML={{ __html: renderMarkdown(description) }}
+        />
+      ) : (
+        <div className="detail-description-preview">
           <span className="detail-description-placeholder">Add notes…</span>
-        )}
-      </div>
+        </div>
+      )}
       {descModalOpen ? (
         <DescriptionModal
           value={description}
