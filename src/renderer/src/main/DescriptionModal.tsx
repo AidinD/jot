@@ -15,18 +15,23 @@ interface DescriptionModalProps {
  */
 export function DescriptionModal({ value, onClose }: DescriptionModalProps): JSX.Element {
   const [draft, setDraft] = useState(value)
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit')
+  // Open on Preview when there's already something to read; empty
+  // descriptions have nothing to preview, so go straight to Edit.
+  const [mode, setMode] = useState<'edit' | 'preview'>(value.length > 0 ? 'preview' : 'edit')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const draftRef = useRef(draft)
   draftRef.current = draft
 
   useEffect(() => {
+    if (mode !== 'edit') {
+      return
+    }
     const el = textareaRef.current
     if (el !== null) {
       el.focus()
       el.setSelectionRange(el.value.length, el.value.length)
     }
-  }, [])
+  }, [mode])
 
   useEffect(() => {
     function handleKey(event: KeyboardEvent): void {
