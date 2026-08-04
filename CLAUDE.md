@@ -23,8 +23,16 @@ to GitHub — pushing the commit alone does not do this, there is no CI wired up
 Publish with:
 
 ```
-GH_TOKEN=$(gh auth token) npx electron-builder --win --publish always
+rm -rf dist out && npx electron-vite build && GH_TOKEN=$(gh auth token) npx electron-builder --win --publish always
 ```
+
+The `electron-vite build` step is NOT optional, even though `electron-builder`
+runs without complaint if you skip it — it happily packages whatever is already
+sitting in `out/` from a stale previous build, silently shipping old code under
+a new version number (happened 2026-08-04: v1.5.30 was published straight from
+the previous day's `out/`, so none of that release's actual changes were in the
+installer). Always `rm -rf dist out` first so a stale directory can't be reused
+by accident.
 
 This must be `electron-builder --publish`, never `npm run package` (produces
 an unpublished local installer only) and never a manual `gh release create`
@@ -32,6 +40,10 @@ upload (wrong asset filename — see DECISIONS.md 2026-07-04 "Release-naming
 gotcha"). Once published, no manual local (re)install is needed — the
 installed app's `electron-updater` picks up the new version on its own next
 launch. (See DECISIONS.md, 2026-08-03, superseding 2026-06-26.)
+
+If a bad build gets published under version X, bumping to X and republishing
+does NOT fix it for anyone who already auto-updated to the bad X — electron-updater
+only offers an update when the version number increases. Bump to X+1 instead.
 
 ## Data & storage gotchas
 

@@ -3,6 +3,27 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-08-04 — Publish command must rebuild first; a same-version republish doesn't fix a bad release
+
+v1.5.30 was published by running `electron-builder --win --publish always`
+directly, per CLAUDE.md's documented command at the time. That command never
+rebuilds — `electron-builder` packages whatever is already in `out/`, so it
+silently shipped the *previous day's* renderer build (2026-08-03 19:16) under
+the 1.5.30 tag. Aidin's app auto-updated to it and none of the intended
+1.5.30 changes were actually present; he reported the fixes "don't work" and
+that's how it surfaced.
+
+Two things fixed:
+- CLAUDE.md's publish command is now `rm -rf dist out && npx electron-vite
+  build && ... electron-builder --win --publish always` — build is no longer
+  a separate implied step, it's part of the one command, with a clean of
+  `dist`/`out` first so a stale directory can never be reused by accident.
+- Republishing under the *same* version number (1.5.30 again, fixed) does
+  nothing for a machine that already auto-updated to the bad 1.5.30 —
+  electron-updater only offers an update on a version increase. Had to bump
+  to 1.5.31 to actually get the fix out. Any bad release must be corrected
+  by bumping forward, never by overwriting the same tag's assets.
+
 ## 2026-08-03 — Drop the manual reinstall-after-release step (but publishing is still required)
 
 **No more local reinstall after a release — but the build still has to be
