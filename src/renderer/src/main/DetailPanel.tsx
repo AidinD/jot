@@ -47,6 +47,8 @@ export function DetailPanel({
   const [imagePaths, setImagePaths] = useState<Map<string, string>>(new Map())
   const [previewSrc, setPreviewSrc] = useState<string | null>(null)
   const [descModalOpen, setDescModalOpen] = useState(false)
+  const [descEditing, setDescEditing] = useState(false)
+  const descRef = useRef<HTMLTextAreaElement>(null)
   const prevIdRef = useRef(todo.id)
 
   // Sync local state when the selected todo changes
@@ -55,9 +57,23 @@ export function DetailPanel({
       setTitle(todo.text)
       setDescription(todo.description)
       setPriorityDraft(String(todo.priority))
+      setDescEditing(false)
       prevIdRef.current = todo.id
     }
   }, [todo.id, todo.text, todo.description, todo.priority])
+
+  // Auto-grow the description textarea to fit its content while editing inline.
+  useEffect(() => {
+    if (!descEditing) {
+      return
+    }
+    const el = descRef.current
+    if (el === null) {
+      return
+    }
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [description, descEditing])
 
   // Resolve image paths
   useEffect(() => {
@@ -337,13 +353,27 @@ export function DetailPanel({
       >
         Description
       </button>
-      {description.length > 0 ? (
+      {descEditing ? (
+        <textarea
+          ref={descRef}
+          className="detail-description-preview detail-description-textarea"
+          placeholder="Add notes… (markdown supported)"
+          value={description}
+          autoFocus
+          onChange={(e) => setDescription(e.target.value)}
+          onBlur={() => {
+            saveDescription(description)
+            setDescEditing(false)
+          }}
+        />
+      ) : description.length > 0 ? (
         <div
           className="detail-description-preview markdown-body"
+          onClick={() => setDescEditing(true)}
           dangerouslySetInnerHTML={{ __html: renderMarkdown(description) }}
         />
       ) : (
-        <div className="detail-description-preview">
+        <div className="detail-description-preview" onClick={() => setDescEditing(true)}>
           <span className="detail-description-placeholder">Add notes…</span>
         </div>
       )}
