@@ -746,6 +746,16 @@ body {
   cursor: text;
 }
 
+.detail-description-textarea {
+  max-height: none;
+  resize: none;
+  outline: none;
+}
+
+.detail-description-textarea:focus {
+  border-color: var(--accent);
+}
+
 .detail-description-placeholder {
   color: var(--text-dim);
 }
