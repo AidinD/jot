@@ -255,15 +255,55 @@ export class TodoStore {
         console.error('Failed to remove image', err)
       }
     }
+    // Removing the last image of a todo left an empty jot-images/<id>/ dir
+    // behind forever - nothing ever revisits it once the todo has no images
+    // left to point at it. Clean it up here too, not just on removeTodo,
+    // since a todo that keeps existing but loses all its images hits the
+    // same leak.
+    await this.removeImageDirIfEmpty(todoId)
+  }
+
+  /** Deletes jot-images/<todoId>/ if it exists and is now empty. Best-effort. */
+  private async removeImageDirIfEmpty(todoId: string): Promise<void> {
+    const dirPath = join(this.dataDir, 'jot-images', todoId)
+    try {
+      const entries = await fs.readdir(dirPath)
+      if (entries.length === 0) {
+        await fs.rmdir(dirPath)
+      }
+    } catch (e) {
+      const err = e as NodeJS.ErrnoException
+      if (err.code !== 'ENOENT') {
+        console.error('Failed to clean up empty image dir', err)
+      }
+    }
   }
 
   async removeTodo(id: string): Promise<void> {
     // Removing a task also removes its subtasks (one level deep, so a single
     // pass is enough — subtasks cannot have their own subtasks).
+    const removedIds = this.state.todos
+      .filter((todo) => todo.id === id || todo.parentId === id)
+      .map((todo) => todo.id)
     this.state.todos = this.state.todos.filter((todo) => {
       return todo.id !== id && todo.parentId !== id
     })
     await this.persist()
+
+    // A removed todo's (and its subtasks') jot-images/<id>/ dir has no other
+    // owner and nothing else will ever delete it - without this, every
+    // deleted card that ever had an image leaks its files on disk forever
+    // (found 2026-08-04: 128 orphaned dirs, 8+ MB, going back a long time).
+    await Promise.all(
+      removedIds.map(async (removedId) => {
+        const dirPath = join(this.dataDir, 'jot-images', removedId)
+        try {
+          await fs.rm(dirPath, { recursive: true, force: true })
+        } catch (e) {
+          console.error('Failed to remove image dir for deleted todo', e)
+        }
+      })
+    )
   }
 
   async setTodoCategory(id: string, categoryId: string | null): Promise<void> {
