@@ -123,6 +123,14 @@ export function App(): JSX.Element {
   const [toast, setToast] = useState<string | null>(null)
   const [updateVersion, setUpdateVersion] = useState<string | null>(null)
 
+  // Mouse back/forward buttons (Chromium button 3/4) replay filter + detail-
+  // panel navigation, like browser history. isNavigatingRef guards the
+  // history-push effect below so replaying an entry doesn't re-push it.
+  type NavEntry = { filter: string; selectedTodoId: string | null }
+  const navHistoryRef = useRef<NavEntry[]>([{ filter: 'all', selectedTodoId: null }])
+  const navIndexRef = useRef(0)
+  const isNavigatingRef = useRef(false)
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 5 }
@@ -143,6 +151,42 @@ export function App(): JSX.Element {
       active = false
       unsubscribe()
     }
+  }, [])
+
+  useEffect(() => {
+    if (isNavigatingRef.current) {
+      isNavigatingRef.current = false
+      return
+    }
+    const entry: NavEntry = { filter, selectedTodoId }
+    const current = navHistoryRef.current[navIndexRef.current]
+    if (current && current.filter === entry.filter && current.selectedTodoId === entry.selectedTodoId) {
+      return
+    }
+    navHistoryRef.current = navHistoryRef.current.slice(0, navIndexRef.current + 1)
+    navHistoryRef.current.push(entry)
+    navIndexRef.current = navHistoryRef.current.length - 1
+  }, [filter, selectedTodoId])
+
+  useEffect(() => {
+    const handleMouseUp = (event: MouseEvent): void => {
+      if (event.button !== 3 && event.button !== 4) {
+        return
+      }
+      event.preventDefault()
+      const delta = event.button === 3 ? -1 : 1
+      const nextIndex = navIndexRef.current + delta
+      const entry = navHistoryRef.current[nextIndex]
+      if (!entry) {
+        return
+      }
+      navIndexRef.current = nextIndex
+      isNavigatingRef.current = true
+      setFilter(entry.filter)
+      setSelectedTodoId(entry.selectedTodoId)
+    }
+    window.addEventListener('mouseup', handleMouseUp)
+    return () => window.removeEventListener('mouseup', handleMouseUp)
   }, [])
 
   useEffect(() => {
