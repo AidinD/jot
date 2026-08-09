@@ -49,6 +49,7 @@ export function DetailPanel({
   const [descModalOpen, setDescModalOpen] = useState(false)
   const [descEditing, setDescEditing] = useState(false)
   const descRef = useRef<HTMLTextAreaElement>(null)
+  const titleRef = useRef<HTMLTextAreaElement>(null)
   const prevIdRef = useRef(todo.id)
 
   // Sync local state when the selected todo changes
@@ -74,6 +75,19 @@ export function DetailPanel({
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
   }, [description, descEditing])
+
+  // Auto-grow the title textarea to fit its content so long titles wrap
+  // instead of scrolling horizontally. Runs whenever `title` changes,
+  // including when switching between todos (the sync effect above resets
+  // `title`, which re-triggers this).
+  useEffect(() => {
+    const el = titleRef.current
+    if (el === null) {
+      return
+    }
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [title])
 
   // Resolve image paths
   useEffect(() => {
@@ -208,13 +222,16 @@ export function DetailPanel({
         </button>
       ) : null}
       <div className="detail-header">
-        <input
+        <textarea
+          ref={titleRef}
           className="detail-title-input"
+          rows={1}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
+              e.preventDefault()
               e.currentTarget.blur()
             }
           }}
