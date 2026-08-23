@@ -17,6 +17,7 @@ import { parsePriority, priorityLabel } from '@shared/priority'
 import { completeAtToken, dateSuggestions, parseDeadline, TRAILING_AT } from '@shared/deadline'
 import { DateSuggestions } from '@shared/DateSuggestions'
 import type { DateSuggestionsHandle } from '@shared/DateSuggestions'
+import { JotMark } from './JotMark'
 import { Sidebar } from './Sidebar'
 import type { Counts } from './Sidebar'
 import { TodoCard, TodoItem } from './TodoItem'
@@ -671,6 +672,7 @@ export function App(): JSX.Element {
       <header className="app-header">
         <div className="app-header-left">
           <h1>
+            <JotMark />
             Jot <span className="version">v{__APP_VERSION__}</span>
           </h1>
           {selectedCategory !== null ? <FolderControl category={selectedCategory} /> : null}

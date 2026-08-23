@@ -106,6 +106,13 @@ body {
   box-sizing: border-box;
 }
 
+/* Sits with the wordmark rather than on its baseline, which a square mark does
+   not have. Added with the same mark in Nib, so the two look like one family. */
+.app-header h1 .brand-mark {
+  vertical-align: -4px;
+  margin-right: 8px;
+}
+
 .app-header h1 .version {
   font-size: 11px;
   font-weight: 400;
