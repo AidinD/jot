@@ -16,6 +16,16 @@ contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
   Closing the window keeps the app running in the tray.
 - `npm run package` — produces an NSIS Windows installer under `dist/`.
 
+**Jot depends on `keel`** (github.com/AidinD/keel), the suite's shared layer,
+linked as `file:../keel` — so it must be checked out at `D:\Repo\Tools\keel`
+or `npm install` fails. It is a devDependency used only by the icon script;
+nothing from it ships in the app.
+
+Editing keel changes Jot immediately, with no rebuild step — that is the point
+of it having no build. It also means a change there can break other siblings, so
+run `npm test` in keel and regenerate the icons here (below) before assuming it
+is fine.
+
 ## Release
 
 A release is: bump the version, commit, push, THEN actually publish the build

@@ -18,10 +18,25 @@ top of your list. The popover dismisses and focus returns to where you were.
 
 ## Develop
 
+Jot depends on [**keel**](https://github.com/AidinD/keel), the shared layer under
+the suite, linked from the filesystem — so it has to be checked out **next to**
+this repo before `npm install` will work:
+
+```
+Tools/
+├── jot/
+└── keel/
+```
+
 ```bash
+git clone https://github.com/AidinD/keel ../keel
 npm install
 npm run dev
 ```
+
+Without the sibling checkout `npm install` fails on `file:../keel`. It is a
+devDependency, used only by `npm run icon` — nothing from keel ships inside the
+app.
 
 The dev build mounts the tray and registers the global shortcut. Close the
 window and the app keeps running in the tray — quit from the tray menu.
