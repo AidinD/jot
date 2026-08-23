@@ -8,6 +8,8 @@ top of your list. The popover dismisses and focus returns to where you were.
 
 - Global quick-capture popover (`Ctrl+Alt+.`), works regardless of focused app
 - Lives in the system tray; click the tray icon to open the full list
+- Frameless window — the header row is the title bar (drag handle + window buttons)
+- Pin todos to a small always-on-top desktop panel: your "get this done today" shortlist
 - Add / complete / delete todos, newest on top
 - Completed items collapse into a "Completed" section with one-click clear
 - Local-first storage (`todos.json` in the app's userData folder)
@@ -43,5 +45,6 @@ Produces an NSIS installer under `dist/`.
 | `src/preload/index.ts` | `window.jot` / `window.capture` IPC bridge |
 | `src/renderer/src/main/` | Main list UI (React) |
 | `src/renderer/src/capture/` | Quick-capture popover UI (React) |
+| `src/renderer/src/pinboard/` | Pinned-todos desktop panel UI (React) |
 
 See [DECISIONS.md](DECISIONS.md) for the architecture rationale.

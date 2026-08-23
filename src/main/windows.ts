@@ -30,6 +30,11 @@ export function createMainWindow(): BrowserWindow {
     minHeight: 560,
     show: false,
     title: 'Jot',
+    // Frameless, like Nib: the app header row IS the title bar (drag handle plus
+    // its own minimise/maximise/close buttons), so the two apps read as one
+    // family. backgroundColor avoids a white flash before the renderer paints.
+    frame: false,
+    backgroundColor: '#1b1c1f',
     autoHideMenuBar: true,
     webPreferences: {
       preload: preloadPath,
@@ -48,6 +53,52 @@ export function createMainWindow(): BrowserWindow {
   })
 
   loadRoute(window, 'index.html')
+  return window
+}
+
+export interface WindowBounds {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * The desktop panel for pinned todos — a small always-on-top card that sits on
+ * the desktop next to whatever you're working in. Frameless with its own drag
+ * strip, and off the taskbar: it's an overlay on the main window, not a second
+ * app. Saved bounds win; otherwise it lands top-right of the display the cursor
+ * is on, clear of the taskbar.
+ */
+export function createPinboardWindow(bounds?: WindowBounds): BrowserWindow {
+  const window = new BrowserWindow({
+    width: bounds?.width ?? 300,
+    height: bounds?.height ?? 360,
+    x: bounds?.x,
+    y: bounds?.y,
+    minWidth: 220,
+    minHeight: 120,
+    show: false,
+    frame: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    fullscreenable: false,
+    maximizable: false,
+    backgroundColor: '#1b1c1f',
+    webPreferences: {
+      preload: preloadPath,
+      sandbox: false
+    }
+  })
+
+  if (bounds === undefined) {
+    const cursor = screen.getCursorScreenPoint()
+    const area = screen.getDisplayNearestPoint(cursor).workArea
+    const [width] = window.getSize()
+    window.setPosition(area.x + area.width - width - 24, area.y + 80)
+  }
+
+  loadRoute(window, 'pinboard.html')
   return window
 }
 

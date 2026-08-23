@@ -7,6 +7,7 @@ import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
 import { formatDeadline, isOverdue, isDueToday } from '@shared/deadline'
 import { emphasisFor } from '@shared/tagEmphasis'
+import { PinIcon } from '@shared/PinIcon'
 import { TagChips } from './TagChips'
 import { PriorityBand } from './PriorityBand'
 import { SubtaskList } from './SubtaskList'
@@ -258,6 +259,18 @@ function BoardCard({
         <div onClick={(e) => e.stopPropagation()}>
           <SubtaskList parentId={todo.id} subtasks={subtasks} onSelect={onSelect} />
         </div>
+      ) : null}
+      {todo.pinned ? (
+        <button
+          className="card-pin"
+          title="Pinned to desktop — click to unpin"
+          onClick={(e) => {
+            e.stopPropagation()
+            jotApi().setTodoPinned?.(todo.id, false)
+          }}
+        >
+          <PinIcon filled />
+        </button>
       ) : null}
       {todo.priority !== 0 ? (
         <span className="prio-badge" title={`Priority ${todo.priority}`}>

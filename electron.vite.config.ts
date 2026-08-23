@@ -26,7 +26,8 @@ export default defineConfig({
       rollupOptions: {
         input: {
           index: resolve(__dirname, 'src/renderer/index.html'),
-          capture: resolve(__dirname, 'src/renderer/capture.html')
+          capture: resolve(__dirname, 'src/renderer/capture.html'),
+          pinboard: resolve(__dirname, 'src/renderer/pinboard.html')
         }
       }
     }

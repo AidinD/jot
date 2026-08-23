@@ -29,6 +29,12 @@ import { PriorityBand } from './PriorityBand'
 
 const MAX_ADD_SUGGESTIONS = 6
 
+// The standalone window is frameless, so the header row doubles as the title
+// bar. Same STANDALONE-SHELL reasoning as the update toast below: Helm's
+// embedded mount supplies its own chrome and its bridge has no window commands,
+// so both the buttons and the drag region are feature-detected off it.
+const IS_FRAMELESS_SHELL = typeof window.jot?.minimizeWindow === 'function'
+
 const EMPTY_STATE: JotState = { todos: [], categories: [], tags: [] }
 
 type SortMode = 'manual' | 'status' | 'date' | 'deadline'
@@ -661,7 +667,7 @@ export function App(): JSX.Element {
   }, [open, categoriesById])
 
   return (
-    <div className="app">
+    <div className={`app${IS_FRAMELESS_SHELL ? ' framed' : ''}`}>
       <header className="app-header">
         <div className="app-header-left">
           <h1>
@@ -719,6 +725,28 @@ export function App(): JSX.Element {
             </svg>
           </button>
           <span className="hint">Ctrl+Alt+. anywhere</span>
+          {IS_FRAMELESS_SHELL ? (
+            <div className="window-controls">
+              <button type="button" onClick={() => window.jot.minimizeWindow()} title="Minimise">
+                –
+              </button>
+              <button
+                type="button"
+                onClick={() => window.jot.toggleMaximizeWindow()}
+                title="Maximise"
+              >
+                □
+              </button>
+              <button
+                type="button"
+                className="danger"
+                onClick={() => window.jot.closeWindow()}
+                title="Close to tray"
+              >
+                ×
+              </button>
+            </div>
+          ) : null}
         </div>
       </header>
 

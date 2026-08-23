@@ -69,14 +69,29 @@ Jot accepts both:
 {
   id: string
   text: string
-  status: "open" | "in-progress" | "done"
+  status: "open" | "in-progress" | "review" | "done"
   description: string
   images: string[]
   categoryId: string | null
+  tags: string[]        // tag catalogue ids
+  priority: number      // lower sorts higher; 0 = none
+  deadline: number | null
+  pinned: boolean       // mirrored onto Jot's always-on-top desktop panel
+  parentId: string | null // set = this todo is a subtask; one level deep only
   createdAt: number
+  updatedAt: number
   completedAt: number | null
 }
 ```
+
+Every field is optional on the way *in* — Jot's loader fills defaults for
+anything missing (`pinned` defaults to `false`) — but Jot writes all of them
+back, so a reader should expect them all to be present.
+
+`pinned` is Jot's "get this done today" shortlist: pinned todos are mirrored
+onto a small always-on-top desktop panel, which exists exactly while at least
+one todo is pinned. Setting `pinned: true` from outside is enough to make the
+panel appear. Jot clears it automatically when a todo becomes `done`.
 
 ### Category
 

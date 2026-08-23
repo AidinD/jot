@@ -6,6 +6,7 @@ import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
 import { formatDeadline, isOverdue, isDueToday } from '@shared/deadline'
 import { emphasisFor } from '@shared/tagEmphasis'
+import { PinIcon } from '@shared/PinIcon'
 import { TagChips } from './TagChips'
 import { SubtaskList } from './SubtaskList'
 
@@ -187,6 +188,18 @@ export function TodoItem({
           </span>
         ) : null}
         {!isEditing ? <TagChips tagIds={todo.tags} tagsById={tagsById} /> : null}
+        {todo.pinned ? (
+          <button
+            className="row-pin"
+            title="Pinned to desktop — click to unpin"
+            onClick={(e) => {
+              e.stopPropagation()
+              jotApi().setTodoPinned?.(todo.id, false)
+            }}
+          >
+            <PinIcon filled />
+          </button>
+        ) : null}
         <button
           className="remove-button"
           title="Delete"

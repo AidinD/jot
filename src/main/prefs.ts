@@ -4,6 +4,9 @@ import { app } from 'electron'
 
 export interface Prefs {
   autoLaunch?: boolean
+  // Where the user last left the pinned-todos desktop panel, so it reappears in
+  // the same spot instead of jumping back to its default corner.
+  pinboardBounds?: { x: number; y: number; width: number; height: number }
 }
 
 function prefsPath(): string {

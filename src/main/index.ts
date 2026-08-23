@@ -11,13 +11,20 @@ const { autoUpdater } = electronUpdater
 import { LocalJsonStorage, TodoStore } from '../core'
 import { resolveDataDir, migrateLegacyData } from './data-dir'
 import { loadPrefs, savePrefs } from './prefs'
-import { createCaptureWindow, createMainWindow, positionCaptureWindow } from './windows'
+import {
+  createCaptureWindow,
+  createMainWindow,
+  createPinboardWindow,
+  positionCaptureWindow
+} from './windows'
 import type { TagEmphasis, TodoStatus } from '../core/types'
 
 const CAPTURE_SHORTCUT = 'Control+Alt+.'
 
 let mainWindow: BrowserWindow | null = null
 let captureWindow: BrowserWindow | null = null
+let pinboardWindow: BrowserWindow | null = null
+let pinboardBoundsTimer: NodeJS.Timeout | null = null
 let tray: Tray | null = null
 let autoLaunch = true
 
@@ -114,6 +121,48 @@ function broadcastChange(): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send('state:changed', state)
   }
+}
+
+/**
+ * The desktop panel exists exactly while something is pinned — pin a todo and it
+ * appears, unpin (or finish) the last one and it goes away. That one rule is the
+ * whole lifecycle, so there is no separate "show the panel" toggle to keep in
+ * sync with the data. Created lazily and then hidden rather than destroyed, so
+ * the user's position survives an empty stretch.
+ */
+function syncPinboardWindow(): void {
+  const hasPinned = store.getState().todos.some((todo) => todo.pinned && todo.status !== 'done')
+  if (!hasPinned) {
+    if (pinboardWindow !== null && !pinboardWindow.isDestroyed()) {
+      pinboardWindow.hide()
+    }
+    return
+  }
+  if (pinboardWindow === null || pinboardWindow.isDestroyed()) {
+    pinboardWindow = createPinboardWindow(loadPrefs().pinboardBounds)
+    rememberPinboardBounds(pinboardWindow)
+  }
+  if (!pinboardWindow.isVisible()) {
+    // showInactive: pinning happens from the main window, and stealing focus
+    // mid-flow would interrupt the keyboard-first loop the whole app is built on.
+    pinboardWindow.showInactive()
+  }
+}
+
+function rememberPinboardBounds(window: BrowserWindow): void {
+  const save = (): void => {
+    // Debounced: 'moved' fires continuously while the panel is dragged.
+    if (pinboardBoundsTimer !== null) {
+      clearTimeout(pinboardBoundsTimer)
+    }
+    pinboardBoundsTimer = setTimeout(() => {
+      if (!window.isDestroyed()) {
+        savePrefs({ ...loadPrefs(), pinboardBounds: window.getBounds() })
+      }
+    }, 400)
+  }
+  window.on('moved', save)
+  window.on('resized', save)
 }
 
 function applyAutoLaunch(): void {
@@ -218,6 +267,9 @@ function registerIpc(): void {
   })
   ipcMain.handle('todos:setDeadline', (_event, id: string, deadline: number | null) => {
     return store.setTodoDeadline(id, deadline)
+  })
+  ipcMain.handle('todos:setPinned', (_event, id: string, pinned: boolean) => {
+    return store.setTodoPinned(id, pinned)
   })
   ipcMain.handle('todos:addSubtask', (_event, parentId: string, text: string) => {
     return store.addSubtask(parentId, text)
@@ -337,6 +389,31 @@ function registerIpc(): void {
   ipcMain.on('update:install', () => {
     autoUpdater.quitAndInstall()
   })
+
+  // The main window is frameless, so its header row owns the window buttons.
+  // Resolved from the sender rather than `mainWindow` so any future frameless
+  // window gets the same three commands for free. Close goes through the normal
+  // close path, which the main window intercepts to hide into the tray.
+  ipcMain.on('window:minimize', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize()
+  })
+  ipcMain.on('window:toggleMaximize', (event) => {
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (window === null) {
+      return
+    }
+    if (window.isMaximized()) {
+      window.unmaximize()
+    } else {
+      window.maximize()
+    }
+  })
+  ipcMain.on('window:close', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close()
+  })
+  ipcMain.on('window:showMain', () => {
+    showMainWindow()
+  })
 }
 
 app.whenReady().then(async () => {
@@ -351,6 +428,7 @@ app.whenReady().then(async () => {
     logStartup('store loaded')
     store.subscribe(() => {
       broadcastChange()
+      syncPinboardWindow()
     })
 
     app.on('browser-window-created', (_event, window) => {
@@ -362,6 +440,8 @@ app.whenReady().then(async () => {
 
     mainWindow = createMainWindow()
     captureWindow = createCaptureWindow()
+    // Pinned todos survive a restart, so the panel has to come back with them.
+    syncPinboardWindow()
     logStartup('windows created')
 
     if (is.dev) {

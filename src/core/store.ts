@@ -84,6 +84,7 @@ export class TodoStore {
       tags: [],
       priority: Math.trunc(priority),
       deadline,
+      pinned: false,
       parentId: null,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -115,6 +116,7 @@ export class TodoStore {
       tags: [],
       priority: 0,
       deadline: null,
+      pinned: false,
       parentId,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -133,6 +135,10 @@ export class TodoStore {
       return {
         ...todo,
         status,
+        // Finishing a todo takes it off the desktop panel: the pinned set is a
+        // live "what's left today" shortlist, so it empties itself as you tick
+        // things off instead of needing a separate unpin step.
+        pinned: status === 'done' ? false : todo.pinned,
         updatedAt: Date.now(),
         completedAt: status === 'done' ? Date.now() : null
       }
@@ -167,6 +173,21 @@ export class TodoStore {
         return todo
       }
       return { ...todo, deadline, updatedAt: Date.now() }
+    })
+    await this.persist()
+  }
+
+  /**
+   * Pin/unpin a todo onto the desktop panel. Deliberately does NOT touch
+   * `updatedAt`: pinning is a view choice about where a todo is shown, not a
+   * change to the todo itself, and it would otherwise churn the "date" sort.
+   */
+  async setTodoPinned(id: string, pinned: boolean): Promise<void> {
+    this.state.todos = this.state.todos.map((todo) => {
+      if (todo.id !== id) {
+        return todo
+      }
+      return { ...todo, pinned }
     })
     await this.persist()
   }

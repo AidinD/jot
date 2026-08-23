@@ -22,6 +22,9 @@ const jotApi = {
   setTodoDeadline: (id: string, deadline: number | null): Promise<void> => {
     return ipcRenderer.invoke('todos:setDeadline', id, deadline)
   },
+  setTodoPinned: (id: string, pinned: boolean): Promise<void> => {
+    return ipcRenderer.invoke('todos:setPinned', id, pinned)
+  },
   addSubtask: (parentId: string, text: string): Promise<string> => {
     return ipcRenderer.invoke('todos:addSubtask', parentId, text)
   },
@@ -111,6 +114,21 @@ const jotApi = {
   },
   installUpdate: (): void => {
     ipcRenderer.send('update:install')
+  },
+  // Window buttons for the frameless main window. Standalone-shell only, like
+  // the updater above - Helm's embedded mount owns its own chrome, and the UI
+  // feature-detects these before drawing the controls.
+  minimizeWindow: (): void => {
+    ipcRenderer.send('window:minimize')
+  },
+  toggleMaximizeWindow: (): void => {
+    ipcRenderer.send('window:toggleMaximize')
+  },
+  closeWindow: (): void => {
+    ipcRenderer.send('window:close')
+  },
+  showMainWindow: (): void => {
+    ipcRenderer.send('window:showMain')
   }
 }
 

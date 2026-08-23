@@ -30,18 +30,61 @@ body {
 
 /* ---------- Layout ---------- */
 
+/* App frame, matching Nib: the padding lives on the header and the body rather
+   than on .app, so in the frameless standalone shell the header's drag region
+   reaches the very top edge of the window. */
 .app {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: 16px;
-  gap: 12px;
 }
 
 .app-header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  padding: 10px 16px;
+}
+
+/* Frameless standalone shell only (see IS_FRAMELESS_SHELL): the header row is
+   the title bar, so it drags the window and its controls opt back out. */
+.app.framed .app-header {
+  -webkit-app-region: drag;
+}
+
+.app.framed .app-header input,
+.app.framed .app-header button,
+.app.framed .app-header select,
+.app.framed .app-header .sort-options {
+  -webkit-app-region: no-drag;
+}
+
+.window-controls {
+  display: flex;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.window-controls button {
+  width: 26px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.window-controls button:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.window-controls button.danger:hover {
+  background: var(--surface);
+  color: var(--danger);
 }
 
 .app-header-left {
@@ -81,6 +124,7 @@ body {
   flex: 1;
   gap: 14px;
   min-height: 0;
+  padding: 0 16px 16px;
 }
 
 /* ---------- Sidebar ---------- */
@@ -2112,4 +2156,150 @@ body {
 
 .last-cat-chip-remove:hover {
   color: var(--danger);
+}
+
+/* ---------- Pinned-todos desktop panel ---------- */
+
+.pinboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Frameless overlay: the title strip is the only drag handle, so the rows below
+   stay clickable rather than dragging the panel by accident. */
+.pinboard-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+}
+
+.pinboard-header button {
+  -webkit-app-region: no-drag;
+}
+
+.pinboard-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+}
+
+.pinboard-count {
+  font-size: 11px;
+  color: var(--text-dim);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.pinboard-unpin-all {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.pinboard-unpin-all:hover {
+  color: var(--danger);
+}
+
+.pinboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.pinboard-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.pinboard-row:hover {
+  background: var(--surface);
+}
+
+.pinboard-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  /* Wraps rather than truncates: the panel is narrow and its whole job is
+     showing what the todo actually says. */
+  overflow-wrap: anywhere;
+}
+
+.pinboard-unpin {
+  border: none;
+  background: transparent;
+  color: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.pinboard-row:hover .pinboard-unpin {
+  color: var(--text-dim);
+}
+
+.pinboard-unpin:hover {
+  color: var(--danger);
+}
+
+/* ---------- Pin-to-desktop controls ---------- */
+
+/* Muted like every other control; the accent is reserved for the pinned state,
+   which is the one thing worth spotting across a full board. */
+.detail-pin,
+.row-pin,
+.card-pin {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.detail-pin:hover,
+.row-pin:hover,
+.card-pin:hover {
+  color: var(--text);
+}
+
+.detail-pin.active,
+.row-pin,
+.card-pin {
+  color: var(--accent);
+}
+
+/* The row's delete button carries margin-left:auto; without this the two auto
+   margins would split the free space and leave a gap between them. */
+.row-pin {
+  margin-left: auto;
+}
+
+.row-pin + .remove-button {
+  margin-left: 0;
 }

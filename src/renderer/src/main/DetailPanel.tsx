@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Category, Tag, Todo, TodoStatus } from '@shared/types'
 import { fromDateInputValue, toDateInputValue } from '@shared/deadline'
 import { renderMarkdown } from '@shared/markdown'
+import { PinIcon } from '@shared/PinIcon'
 import { SubtaskList } from './SubtaskList'
 import { DescriptionModal } from './DescriptionModal'
 
@@ -236,6 +237,16 @@ export function DetailPanel({
             }
           }}
         />
+        {/* Pinning needs a host with a desktop to pin to — see JotApi.setTodoPinned. */}
+        {jotApi().setTodoPinned !== undefined ? (
+          <button
+            className={`detail-pin${todo.pinned ? ' active' : ''}`}
+            onClick={() => jotApi().setTodoPinned?.(todo.id, !todo.pinned)}
+            title={todo.pinned ? 'Unpin from desktop' : 'Pin to desktop'}
+          >
+            <PinIcon filled={todo.pinned} />
+          </button>
+        ) : null}
         <button className="detail-close" onClick={onClose} title="Close">
           ×
         </button>

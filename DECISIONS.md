@@ -3,6 +3,49 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-08-23 — Frameless window with a Nib-style header, and a pinned-todos desktop panel
+
+Two board tasks, both shaped by the same idea: Jot and Nib should read as one
+family (Nib already borrows Jot's design tokens verbatim — see Nib's DECISIONS
+2026-08-19), and Nib's sticky-note window was the obvious precedent for putting
+todos on the desktop.
+
+**Frameless main window.** The native title bar is gone; the app header row is
+the title bar, carrying the drag region and its own minimise / maximise /
+close-to-tray buttons, exactly like Nib's. The 16px padding moved off `.app`
+onto `.app-header` and `.body` so the drag region reaches the top edge of the
+window rather than starting 16px in.
+
+- The window buttons and the drag region are gated on `IS_FRAMELESS_SHELL`
+  (`typeof window.jot?.minimizeWindow === 'function'`), the same feature-detect
+  pattern the update toast already uses. Helm mounts Jot's *built renderer* in a
+  webview with its own `window.jot` bridge (jot-webview-preload.cjs), so without
+  the gate the embedded board would grow window buttons for Helm's window. The
+  drag region is gated too, via an `.app.framed` class.
+- Close goes through the normal `window.close()` path, which the main window
+  already intercepts to hide into the tray — so ✕ still means "close to tray",
+  not "quit".
+
+**Pinned todos on the desktop.** `Todo.pinned` (a boolean on the todo, not a
+separate list) drives a small always-on-top frameless panel, off the taskbar.
+
+- Chosen over one window per pinned todo (Nib's sticky model) because the task
+  said "a way of showcasing — this is what I want to get done today": that is
+  one shortlist, not N floating cards.
+- **The panel exists exactly while something is pinned.** No show/hide toggle to
+  keep in sync with the data, and the panel disappears on its own once the list
+  is empty. It is created lazily then hidden (never destroyed), so its position
+  survives an empty stretch; the position itself lives in `prefs.json`.
+- **Finishing a todo unpins it** (in `setStatus`), so ticking things off empties
+  the panel instead of leaving a done pile that needs a separate cleanup pass.
+- `setTodoPinned` is **optional** on `JotApi`. Helm's webview preload is a
+  hand-maintained byte-mirror of Jot's bridge in a separate repo; a required
+  method would break the embedded board until that file is updated. The UI hides
+  the pin control when the host doesn't provide it.
+- `setTodoPinned` deliberately does not touch `updatedAt` — pinning says where a
+  todo is *shown*, not that the todo changed, and bumping it would churn the
+  "date" sort.
+
 ## 2026-08-04 — Publish command must rebuild first; a same-version republish doesn't fix a bad release
 
 v1.5.30 was published by running `electron-builder --win --publish always`

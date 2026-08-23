@@ -10,6 +10,10 @@ export interface Todo {
   tags: string[]
   priority: number
   deadline: number | null
+  // Pinned todos are mirrored onto the always-on-top desktop panel — the
+  // "this is what I want to get done today" shortlist. Independent of status,
+  // priority and category: it is a manual, transient pick, not a ranking.
+  pinned: boolean
   // A todo with parentId set is a subtask. Nesting is one level deep — a
   // subtask cannot itself have subtasks.
   parentId: string | null
@@ -94,6 +98,13 @@ export interface JotApi {
   setStatus: (id: string, status: TodoStatus, toTop?: boolean) => Promise<void>
   setTodoPriority: (id: string, priority: number) => Promise<void>
   setTodoDeadline: (id: string, deadline: number | null) => Promise<void>
+  /**
+   * Optional: pin a todo onto the desktop panel. Optional because a host that
+   * mounts this UI (Helm's embedded board) supplies its own bridge and has no
+   * desktop panel to pin to - the UI hides the pin control when it's absent,
+   * the same way it hides the standalone-only update toast.
+   */
+  setTodoPinned?: (id: string, pinned: boolean) => Promise<void>
   addSubtask: (parentId: string, text: string) => Promise<string>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   removeTodo: (id: string) => Promise<void>
