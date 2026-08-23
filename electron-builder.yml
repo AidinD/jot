@@ -8,7 +8,10 @@ files:
 win:
   target:
     - nsis
-  icon: resources/icon.png
+  # A multi-size .ico, not the PNG: electron-builder would downscale one 512px
+  # bitmap to 16px, which is what the small drawing in scripts/generate-icon.mjs
+  # exists to avoid.
+  icon: resources/icon.ico
 nsis:
   oneClick: false
   perMachine: false

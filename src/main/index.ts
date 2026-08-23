@@ -192,7 +192,10 @@ function setAutoLaunch(value: boolean): void {
 }
 
 function buildTray(): void {
-  const iconPath = join(__dirname, '../../resources/tray.png')
+  // The multi-size .ico rather than a single PNG, so Windows can pick the frame
+  // for the current DPI scale (16 at 100%, 20 at 125%, 24 at 150%, 32 at 200%)
+  // instead of shrinking one bitmap - see scripts/generate-icon.mjs.
+  const iconPath = join(__dirname, '../../resources/icon.ico')
   let image = nativeImage.createFromPath(iconPath)
   if (image.isEmpty()) {
     // Fall back to a blank 16x16 so the tray still mounts in dev.

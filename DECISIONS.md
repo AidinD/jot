@@ -3,6 +3,49 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-08-23 — Open ring stays, and the icon becomes a generated multi-size .ico
+
+Four candidate marks were drawn up (Iota, a written tick, a jotted list, and a
+refined version of the existing circle-and-tick). Aidin picked the refinement,
+**Open ring**, and the reasoning that settled it is worth keeping:
+
+- At 16px it is the only one of the four with a *silhouette*. The others reduce
+  to a diagonal stroke, which half the taskbar already looks like. An app icon
+  at that size is not there to explain the app, it is there to be found.
+- The "namesake" argument the other three were built on is weaker than it looks.
+  Helm and Nib are nouns for physical objects; **Jot is a verb**, so there is no
+  equivalent object to draw. The closest thing to "a jot" is the dot itself,
+  which is why Iota is the one to revisit if this ever becomes a real rebrand.
+
+**The soft tray mark was never the drawing.** `scripts/generate-icon.mjs` had
+gone stale — it still rendered the pre-1.0 blue rounded square, while the coral
+mark in `resources/icon.png` had been dropped in by hand, so running the script
+would have silently reverted the app icon. And Jot shipped a *single* PNG, which
+Windows resampled down to 16px for the tray.
+
+Rewritten on Nib's generator (same dependency-free PNG and ICO writers, same
+distance-field rendering — two apps, one icon pipeline):
+
+- The geometry is taken from `JotMark.tsx`, the header component, so the mark
+  beside the wordmark and the mark in the taskbar are one drawing.
+- Two drawings, per the family rule: the full mark at 32px and up, and below
+  that a heavier ring with a wider bite and a shorter tick. Measured, not
+  guessed — at 16px the true 9-unit stroke lands under a pixel and the counter
+  inside the ring closes up, which is exactly the blob that shipped.
+- One `icon.ico` carrying 16/20/24/32/48/64/128/256, used for both the packaged
+  app and the tray. A tray-only .ico topping out at 32 was tried and rejected:
+  on Windows `nativeImage.createFromPath` reports a 256px bitmap for *any* .ico,
+  so a small-only file gets upscaled before anything else happens. Carrying
+  every size means whichever path Windows takes it finds a real drawing.
+- 20 and 24 are in there because the tray asks for them at 125% and 150%
+  display scaling — the two scales where a missing frame means a resample.
+
+Verified by decoding the generated `.ico` (all eight frames present and drawn,
+not resampled) and by loading it through Electron's `nativeImage`. The tray icon
+as Windows finally paints it was *not* verified on screen — it sits in the
+notification-area overflow here, and driving that flyout meant screenshotting
+parts of the desktop, which is not worth it for a look.
+
 ## 2026-08-23 — Frameless window with a Nib-style header, and a pinned-todos desktop panel
 
 Two board tasks, both shaped by the same idea: Jot and Nib should read as one
