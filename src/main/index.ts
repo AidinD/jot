@@ -8,6 +8,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // CJS deps. This crashed 1.5.7 on launch; keep it as a default import.
 import electronUpdater from 'electron-updater'
 const { autoUpdater } = electronUpdater
+import { registerWindowControls } from 'keel/window'
 import { LocalJsonStorage, TodoStore } from '../core'
 import { resolveDataDir, migrateLegacyData } from './data-dir'
 import { loadPrefs, savePrefs } from './prefs'
@@ -394,26 +395,9 @@ function registerIpc(): void {
   })
 
   // The main window is frameless, so its header row owns the window buttons.
-  // Resolved from the sender rather than `mainWindow` so any future frameless
-  // window gets the same three commands for free. Close goes through the normal
-  // close path, which the main window intercepts to hide into the tray.
-  ipcMain.on('window:minimize', (event) => {
-    BrowserWindow.fromWebContents(event.sender)?.minimize()
-  })
-  ipcMain.on('window:toggleMaximize', (event) => {
-    const window = BrowserWindow.fromWebContents(event.sender)
-    if (window === null) {
-      return
-    }
-    if (window.isMaximized()) {
-      window.unmaximize()
-    } else {
-      window.maximize()
-    }
-  })
-  ipcMain.on('window:close', (event) => {
-    BrowserWindow.fromWebContents(event.sender)?.close()
-  })
+  // Shared with the rest of the suite; close goes through the normal close path,
+  // which the main window intercepts above to hide into the tray instead.
+  registerWindowControls({ ipcMain, BrowserWindow })
   ipcMain.on('window:showMain', () => {
     showMainWindow()
   })

@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import { windowControlsBridge } from 'keel/window'
 import type { JotState, TagEmphasis, TodoStatus } from '../core/types'
 
 const jotApi = {
@@ -118,15 +119,7 @@ const jotApi = {
   // Window buttons for the frameless main window. Standalone-shell only, like
   // the updater above - Helm's embedded mount owns its own chrome, and the UI
   // feature-detects these before drawing the controls.
-  minimizeWindow: (): void => {
-    ipcRenderer.send('window:minimize')
-  },
-  toggleMaximizeWindow: (): void => {
-    ipcRenderer.send('window:toggleMaximize')
-  },
-  closeWindow: (): void => {
-    ipcRenderer.send('window:close')
-  },
+  ...windowControlsBridge(ipcRenderer),
   showMainWindow: (): void => {
     ipcRenderer.send('window:showMain')
   }
