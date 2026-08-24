@@ -308,7 +308,7 @@ Open packaging detail: module format. This repo is `type: module` (ESM), so `@jo
   sees, so the two silently diverge. The fix that keeps the app portable is a
   per-machine override: default to userData (zero-config for normal installs), and
   let `JOT_DATA_DIR` point the data at a non-virtualized path the agent can also
-  reach. On this developer machine it's set (User-scope env var) to `D:\Dropbox\jot`,
+  reach. On this developer machine it's set (User-scope env var) to `D:\YourSyncedFolder\jot`,
   which doubles as laptop↔PC sync. `Documents` was rejected as a default because it
   is OneDrive-redirected here (sync-conflict risk on a hot file).
 - Migration (`migrateLegacyData`, `data-dir.ts`) copies `userData/todos.json` +

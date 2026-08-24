@@ -78,7 +78,7 @@ only offers an update when the version number increases. Bump to X+1 instead.
 ## Data & storage gotchas
 
 - Runtime data is `todos.json` in the data dir. On this machine the data dir is
-  overridden to `D:\Dropbox\jot` via the `JOT_DATA_DIR` env var (which also serves
+  overridden to `D:\YourSyncedFolder\jot` via the `JOT_DATA_DIR` env var (which also serves
   as laptop↔PC sync). The default is Electron's userData folder.
 - The file is UTF-8. When editing it from a shell, preserve UTF-8 (PowerShell:
   `-Encoding UTF8`). Double-encoded å/ä/ö is a known past bug, self-healed on load
@@ -91,6 +91,6 @@ only offers an update when the version number increases. Bump to X+1 instead.
 ## Task tracking
 
 This repo has a matching "Jot" category on the Jot board itself
-(`D:\Dropbox\jot\todos.json`). Track development work there: create or claim a task
+(`D:\YourSyncedFolder\jot\todos.json`). Track development work there: create or claim a task
 and set it to `in-progress` at the start, then move it to `review` when done —
 never `done` (Aidin confirms and closes).
