@@ -18,8 +18,13 @@ contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
 
 **Jot depends on `keel`** (github.com/AidinD/keel), the suite's shared layer,
 linked as `file:../keel` — so it must be checked out at `D:\Repo\Tools\keel`.
-It is a devDependency, used by `npm run icon` and `npm run release`; nothing from
-it ships in the app.
+It is a devDependency, used by `npm run icon`, `npm run release`, and — since the
+atomic write moved to `keel/storage` — by the app itself. A devDependency is
+still right: electron-vite bundles, and `externalizeDepsPlugin` externalises
+`dependencies` only, so keel's code is inlined into `out/main` rather than
+resolved at runtime. Verified by grepping the built bundle; do that again if the
+build config changes, because a keel import left external in a packaged app fails
+with nothing in the log.
 
 `npm install` does **not** fail when it is missing — npm 11 links a missing
 `file:` dependency to a dangling symlink and exits 0. The failure arrives later

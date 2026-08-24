@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto'
 import { promises as fs, watch as watchFs, watchFile as watchFileFs, unwatchFile as unwatchFileFs } from 'fs'
 import { basename, dirname, join } from 'path'
 import type { Category, JotState, Tag, Todo, TodoStatus } from './types'
@@ -12,79 +11,26 @@ const DEFAULT_TAGS: Tag[] = [
   { id: 'tag-idea', name: 'Idea', color: '#b98cff', description: 'Rough idea, not committed yet', emphasis: null }
 ]
 
-const MAX_WRITE_ATTEMPTS = 4
-
 /**
- * Is this error "something else is holding the file right now", rather than a
- * real failure?
+ * The atomic write comes from `keel/storage`, shared with Nib and Helm.
  *
- * Windows reports BOTH a locked file and a permission-denied folder as EPERM, so
- * the error code alone cannot tell them apart. `targetExists` is what separates
- * them: you can only be fighting over a file that is already there. A folder we
- * are not allowed to write in produces the same EPERM with no file at the end of
- * it, and retrying that just delays a wrong answer.
+ * Jot's own copy is where the suite's version started - temp file, rename, retry
+ * while the destination is locked, because on Windows a Dropbox sync client
+ * holding the file makes the rename fail with EPERM and a plain write loses the
+ * change outright (Helm's Jot bridge, 2026-08-03).
+ *
+ * What it did not know is that the temp CLEANUP needs the same treatment. A single
+ * silent unlink loses a race: the sync client can lock the temp the instant it
+ * appears, and the file stays behind. Helm found that out with 1462 orphans in one
+ * directory, and this data folder still holds one from before the temp names were
+ * randomised. The shared version retries the cleanup over the same backoff.
+ *
+ * Imported and re-exported: store.ts imports it from here, and the seam below is
+ * still Jot's.
  */
-function isTransientLock(error: unknown, targetExists: boolean): boolean {
-  const code = (error as NodeJS.ErrnoException | null)?.code
-  if (code === 'EBUSY') {
-    return true // always a live handle on something
-  }
-  if (code === 'EPERM' || code === 'EACCES') {
-    return targetExists
-  }
-  return false
-}
+import { writeFileAtomic } from 'keel/storage'
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-/**
- * Write `contents` to `filePath` atomically (temp file + rename), retrying while
- * the target is momentarily locked.
- *
- * Windows refuses the rename with EPERM/EBUSY whenever another process holds the
- * destination - Dropbox syncing the file (Jot's data dir normally lives in
- * Dropbox), an antivirus scanner, or a search indexer. Without a retry that lost
- * the whole write: observed in Helm's Jot bridge on 2026-08-03, where a plain
- * status change failed with "EPERM ... rename" under a concurrent test run.
- *
- * Two details matter beyond the retry itself:
- *  - the temp file gets a random suffix per attempt, so two writers never fight
- *    over one fixed `todos.json.tmp`;
- *  - the temp file is cleaned up on failure, so a crashed write leaves no litter.
- *
- * Still throws when the write genuinely cannot succeed - callers surface that.
- */
-export async function writeFileAtomic(filePath: string, contents: string): Promise<void> {
-  const directoryPath = dirname(filePath)
-  const targetName = basename(filePath)
-  await fs.mkdir(directoryPath, { recursive: true })
-
-  for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt++) {
-    const tempPath = join(directoryPath, `.${targetName}.${randomBytes(4).toString('hex')}.tmp`)
-    try {
-      await fs.writeFile(tempPath, contents, 'utf-8')
-      await fs.rename(tempPath, filePath)
-      return
-    } catch (error) {
-      await fs.unlink(tempPath).catch(() => {
-        // best-effort cleanup; the write already failed
-      })
-      // Whether the destination already exists decides whether an EPERM is a
-      // lock worth waiting out or a permission problem worth reporting now.
-      const targetExists = await fs
-        .access(filePath)
-        .then(() => true)
-        .catch(() => false)
-      if (isTransientLock(error, targetExists) && attempt < MAX_WRITE_ATTEMPTS - 1) {
-        await delay(60 * (attempt + 1))
-        continue
-      }
-      throw error
-    }
-  }
-}
+export { writeFileAtomic }
 
 /**
  * Storage seam. v1 ships a local JSON implementation, but the rest of the
