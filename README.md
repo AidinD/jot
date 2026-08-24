@@ -34,9 +34,10 @@ npm install
 npm run dev
 ```
 
-Without the sibling checkout `npm install` fails on `file:../keel`. It is a
-devDependency, used only by `npm run icon` — nothing from keel ships inside the
-app.
+Without the sibling checkout `npm install` still **exits 0** — npm links
+`file:../keel` to a dangling symlink and says nothing at all. What fails is the
+first import: `npm run icon` dies with `ERR_MODULE_NOT_FOUND`. keel is a
+devDependency, used only by that script — nothing from it ships inside the app.
 
 The dev build mounts the tray and registers the global shortcut. Close the
 window and the app keeps running in the tray — quit from the tray menu.

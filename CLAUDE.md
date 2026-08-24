@@ -17,9 +17,14 @@ contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
 - `npm run package` — produces an NSIS Windows installer under `dist/`.
 
 **Jot depends on `keel`** (github.com/AidinD/keel), the suite's shared layer,
-linked as `file:../keel` — so it must be checked out at `D:\Repo\Tools\keel`
-or `npm install` fails. It is a devDependency used only by the icon script;
-nothing from it ships in the app.
+linked as `file:../keel` — so it must be checked out at `D:\Repo\Tools\keel`.
+It is a devDependency used only by the icon script; nothing from it ships in the
+app.
+
+`npm install` does **not** fail when it is missing — npm 11 links a missing
+`file:` dependency to a dangling symlink and exits 0. The failure arrives later
+and quieter, as `ERR_MODULE_NOT_FOUND` the first time something imports keel. So
+a green install is not evidence the sibling is there.
 
 Editing keel changes Jot immediately, with no rebuild step — that is the point
 of it having no build. It also means a change there can break other siblings, so
