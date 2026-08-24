@@ -18,8 +18,8 @@ contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
 
 **Jot depends on `keel`** (github.com/AidinD/keel), the suite's shared layer,
 linked as `file:../keel` — so it must be checked out at `D:\Repo\Tools\keel`.
-It is a devDependency used only by the icon script; nothing from it ships in the
-app.
+It is a devDependency, used by `npm run icon` and `npm run release`; nothing from
+it ships in the app.
 
 `npm install` does **not** fail when it is missing — npm 11 links a missing
 `file:` dependency to a dangling symlink and exits 0. The failure arrives later
@@ -38,18 +38,28 @@ to GitHub — pushing the commit alone does not do this, there is no CI wired up
 Publish with:
 
 ```
-rm -rf dist out && npx electron-vite build && GH_TOKEN=$(gh auth token) npx electron-builder --win --publish always
+npm run release
 ```
 
-The `electron-vite build` step is NOT optional, even though `electron-builder`
-runs without complaint if you skip it — it happily packages whatever is already
-sitting in `out/` from a stale previous build, silently shipping old code under
-a new version number (happened 2026-08-04: v1.5.30 was published straight from
-the previous day's `out/`, so none of that release's actual changes were in the
-installer). Always `rm -rf dist out` first so a stale directory can't be reused
-by accident.
+That is `scripts/release.mjs`, and it exists because the four-command line it
+replaces could not check the two things that have actually gone wrong here:
 
-This must be `electron-builder --publish`, never `npm run package` (produces
+- **`out/` must be cleared and rebuilt.** electron-builder runs without complaint
+  if you skip the build — it happily packages whatever is already sitting in
+  `out/` from a stale previous build, silently shipping old code under a new
+  version number. That happened on 2026-08-04: v1.5.30 was published straight
+  from the previous day's `out/`, so none of that release's actual changes were in
+  the installer.
+- **The version must not already be released.** electron-builder treats a release
+  older than two hours as untouchable, skips `latest.yml` with a notice buried in
+  its output, and exits 0 — a failure shaped exactly like a success, leaving the
+  updater on the old build. Nib lost a whole release to this on 2026-08-24.
+
+The script also refuses a dirty tree, so the published build always matches a
+commit. The guards come from `keel/release`, shared with the sibling apps; the
+script itself is just Jot's build in the middle of them.
+
+It must be `electron-builder --publish`, never `npm run package` (produces
 an unpublished local installer only) and never a manual `gh release create`
 upload (wrong asset filename — see DECISIONS.md 2026-07-04 "Release-naming
 gotcha"). Once published, no manual local (re)install is needed — the
