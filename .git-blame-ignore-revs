@@ -1,0 +1,7 @@
+# Line-ending normalisation when .gitattributes was added (2026-08-24). It
+# rewrote App.tsx and styles.css end to end and changed nothing else, so blame
+# should look straight through it:
+#
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+e6f032cd32d0cefad02837a6a4fe14af814f8526
