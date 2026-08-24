@@ -51,28 +51,36 @@ const coral = diagonalRamp([255, 154, 60], [255, 107, 107])
  * slightly larger radius so the counter inside the ring stays open. Without it,
  * 16px is an orange blob with a notch - which is what shipped when there was
  * only one drawing.
+ *
+ * ## Both were scaled up on 2026-08-24
+ *
+ * The ring's ink covered 69% of the box, against 83% for Nib's mark and 83% for
+ * Tend's, so Jot looked like the small one whenever the suite's headers were seen
+ * side by side. FULL is scaled by 1.203 about its own centre and SMALL by 1.078,
+ * both bringing the ink to 83%; the drawings are otherwise untouched, and
+ * JotMark.tsx carries the same factor so the header and the taskbar agree.
  */
 const FULL = {
   centreY: 0.52,
-  radius: 0.3,
-  weight: 0.09,
+  radius: 0.361,
+  weight: 0.108,
   sweep: 294,
   tick: [
-    [0.34, 0.54],
-    [0.46, 0.66],
-    [0.78, 0.24]
+    [0.3075, 0.544],
+    [0.4519, 0.6884],
+    [0.8368, 0.1832]
   ]
 }
 
 const SMALL = {
   centreY: 0.5,
-  radius: 0.325,
-  weight: 0.12,
+  radius: 0.35,
+  weight: 0.129,
   sweep: 250,
   tick: [
-    [0.3, 0.52],
-    [0.43, 0.655],
-    [0.8, 0.22]
+    [0.2843, 0.5216],
+    [0.4246, 0.6671],
+    [0.8235, 0.1982]
   ]
 }
 
