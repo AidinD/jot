@@ -37,6 +37,14 @@ card here is a dnd-kit sortable and dnd-kit writes a `transform` onto the elemen
 it drags; a transformed ancestor makes `position: fixed` resolve against the CARD
 instead of the window. The portal removes the question rather than answering it.
 
+**The desktop panel answers it too**, added right after the first release said it
+would not. The argument against was that a uuid is 36 characters and the panel is
+300px wide - which was a reason to make the menu shrink, not a reason to leave
+the panel out. It caps at the viewport and the id wraps, measured at 234px in a
+300px window. The panel deliberately offers only two moves, tick and unpin, but a
+reference is not a third move on the todo: it copies something out and changes
+nothing.
+
 **The clipboard write goes through the main process** (`JotApi.copyText`, optional
 in the same way and for the same reason as `setTodoPinned` — Helm's embedded board
 brings its own bridge and falls back to `navigator.clipboard`).
@@ -47,6 +55,10 @@ while the row cheerfully said **Copied** — a fire-and-forget promise, nothing
 thrown where the copy was asked for, and the clipboard still holding whatever it
 held before. The copy is now awaited and the row reports what actually happened;
 on failure the menu stays open, because the id is right there to select by hand.
+
+**The header's "Copy all visible tasks" went the same way.** It had the same
+unawaited `.then()` and the same toast that could not fail, and there was no
+argument for leaving one honest copy beside one that guesses.
 
 ## 2026-08-23 — Open ring stays, and the icon becomes a generated multi-size .ico
 

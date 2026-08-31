@@ -2323,6 +2323,11 @@ body {
   position: fixed;
   z-index: 60;
   min-width: 190px;
+  /* The desktop panel is 300px wide and can be dragged down to 220, which is
+     narrower than a uuid renders. Shrink rather than hang off the edge - the
+     clamp measures the menu after it has been laid out, so a wrapped id moves
+     it to the right place, not to where an unwrapped one would have gone. */
+  max-width: calc(100vw - 12px);
   padding: 4px;
   background: var(--surface-hover);
   border: 1px solid var(--border);
@@ -2361,6 +2366,7 @@ body {
   color: var(--text-dim);
   font-family: ui-monospace, Consolas, monospace;
   font-size: 10.5px;
+  overflow-wrap: anywhere;
   -webkit-user-select: text;
   user-select: text;
   cursor: text;

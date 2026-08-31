@@ -655,16 +655,32 @@ export function App(): JSX.Element {
     }
   }
 
-  const handleCopy = useCallback(() => {
+  const handleCopy = useCallback(async () => {
     const lines = open.map((todo) => {
       const check = todo.status === 'in-progress' ? '/' : ' '
       const cat = todo.categoryId ? categoriesById.get(todo.categoryId) : null
       const tag = cat ? ` (#${cat.name})` : ''
       return `- [${check}] ${todo.text}${tag}`
     })
-    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    /*
+     * Through the host where it offers a clipboard, the browser call where it
+     * does not - the same path the card menu takes, and for the same reason:
+     * `navigator.clipboard.writeText` rejects with "Document is not focused"
+     * rather than throwing where it was called, so an unawaited copy leaves the
+     * toast saying it copied over a clipboard that never changed.
+     */
+    const text = lines.join('\n')
+    try {
+      const host = jotApi().copyText
+      if (host !== undefined) {
+        await host(text)
+      } else {
+        await navigator.clipboard.writeText(text)
+      }
       setToast(`Copied ${open.length} tasks`)
-    })
+    } catch {
+      setToast('Could not reach the clipboard')
+    }
   }, [open, categoriesById])
 
   return (
@@ -715,7 +731,7 @@ export function App(): JSX.Element {
               ▦ Advanced
             </button>
           </div>
-          <button className="icon-btn" onClick={handleCopy} title="Copy all visible tasks">
+          <button className="icon-btn" onClick={() => void handleCopy()} title="Copy all visible tasks">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
               <path

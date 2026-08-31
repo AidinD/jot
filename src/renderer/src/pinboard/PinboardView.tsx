@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import type { Category, JotState, Todo, TodoStatus } from '@shared/types'
 import { priorityLabel } from '@shared/priority'
 import { formatDeadline, isDueToday, isOverdue } from '@shared/deadline'
+import { CardMenu, useCardMenu } from '@shared/CardMenu'
+import { todoReference } from '@shared/reference'
 
 const EMPTY_STATE: JotState = { todos: [], categories: [], tags: [] }
 
@@ -20,6 +22,7 @@ const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
  */
 export function Pinboard(): JSX.Element {
   const [state, setState] = useState<JotState>(EMPTY_STATE)
+  const cardMenu = useCardMenu()
 
   useEffect(() => {
     jotApi()
@@ -75,6 +78,7 @@ export function Pinboard(): JSX.Element {
               key={todo.id}
               className="pinboard-row"
               onDoubleClick={() => window.jot.showMainWindow()}
+              onContextMenu={(e) => cardMenu.open(e, { id: todo.id, text: todo.text })}
               title="Double-click to open Jot"
             >
               <button
@@ -114,6 +118,14 @@ export function Pinboard(): JSX.Element {
           )
         })}
       </ul>
+      {cardMenu.menu !== null ? (
+        <CardMenu
+          at={cardMenu.menu.at}
+          todoId={cardMenu.menu.target.id}
+          reference={todoReference(cardMenu.menu.target.id, cardMenu.menu.target.text)}
+          onClose={cardMenu.close}
+        />
+      ) : null}
     </div>
   )
 }
