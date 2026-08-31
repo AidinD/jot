@@ -1,6 +1,16 @@
 import { appendFileSync } from 'fs'
 import { join } from 'path'
-import { app, BrowserWindow, globalShortcut, ipcMain, Menu, nativeImage, Tray, dialog } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  clipboard,
+  globalShortcut,
+  ipcMain,
+  Menu,
+  nativeImage,
+  Tray,
+  dialog
+} from 'electron'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 // electron-updater is CommonJS; a named ESM import ("import { autoUpdater }")
 // fails at runtime in the packaged app (main is built as ESM). Import the
@@ -298,6 +308,17 @@ function registerIpc(): void {
   )
   ipcMain.handle('todos:removeImage', (_event, todoId: string, imagePath: string) => {
     return store.removeImage(todoId, imagePath)
+  })
+  /*
+   * The clipboard, through the main process.
+   *
+   * Not `navigator.clipboard` in the renderer: it needs a focused document, and
+   * when it does not have one it rejects instead of throwing where you asked -
+   * a copy that reports success and copies nothing. Electron's own clipboard has
+   * no such condition and is two lines.
+   */
+  ipcMain.handle('clipboard:write', (_event, text: unknown) => {
+    clipboard.writeText(String(text ?? ''))
   })
   ipcMain.handle('images:resolve', (_event, relativePath: string) => {
     return join(resolveDataDir(), relativePath)

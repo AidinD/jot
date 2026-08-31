@@ -105,6 +105,20 @@ export interface JotApi {
    * the same way it hides the standalone-only update toast.
    */
   setTodoPinned?: (id: string, pinned: boolean) => Promise<void>
+  /**
+   * Optional: put text on the system clipboard through the host process.
+   *
+   * Optional for the same reason as `setTodoPinned` - a host that mounts this UI
+   * supplies its own bridge and may not offer one. The caller falls back to
+   * `navigator.clipboard`, which is what a browser-shaped host has anyway.
+   *
+   * Worth routing through the host at all because `navigator.clipboard.writeText`
+   * rejects with "Document is not focused" and does it QUIETLY: nothing throws
+   * where the copy was asked for, so the UI happily says it copied while the
+   * clipboard still holds whatever it held before. Observed, not feared - the
+   * card menu's own test run caught exactly that.
+   */
+  copyText?: (text: string) => Promise<void>
   addSubtask: (parentId: string, text: string) => Promise<string>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   removeTodo: (id: string) => Promise<void>

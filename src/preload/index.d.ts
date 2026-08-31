@@ -12,6 +12,7 @@ interface JotBridge {
   setTodoPriority: (id: string, priority: number) => Promise<void>
   setTodoDeadline: (id: string, deadline: number | null) => Promise<void>
   setTodoPinned: (id: string, pinned: boolean) => Promise<void>
+  copyText: (text: string) => Promise<void>
   addSubtask: (parentId: string, text: string) => Promise<string>
   updateTodo: (id: string, patch: { text?: string; description?: string }) => Promise<void>
   addImage: (todoId: string) => Promise<void>

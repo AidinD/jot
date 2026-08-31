@@ -1,6 +1,8 @@
 import { jotApi } from '../jotApiClient'
 import { useState } from 'react'
 import type { Todo, TodoStatus } from '@shared/types'
+import { CardMenu, useCardMenu } from '@shared/CardMenu'
+import { todoReference } from '@shared/reference'
 
 const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
 
@@ -19,6 +21,7 @@ interface SubtaskListProps {
  */
 export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps): JSX.Element {
   const [draft, setDraft] = useState('')
+  const cardMenu = useCardMenu()
 
   function commitAdd(): void {
     const text = draft.trim()
@@ -55,6 +58,7 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
               key={subtask.id}
               className="subtask-row"
               onClick={() => onSelect(subtask.id)}
+              onContextMenu={(e) => cardMenu.open(e, { id: subtask.id, text: subtask.text })}
             >
               <button
                 className={`status-checkbox subtask-checkbox ${subtask.status}`}
@@ -96,6 +100,14 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
         }}
         onBlur={commitAdd}
       />
+      {cardMenu.menu !== null ? (
+        <CardMenu
+          at={cardMenu.menu.at}
+          todoId={cardMenu.menu.target.id}
+          reference={todoReference(cardMenu.menu.target.id, cardMenu.menu.target.text)}
+          onClose={cardMenu.close}
+        />
+      ) : null}
     </div>
   )
 }

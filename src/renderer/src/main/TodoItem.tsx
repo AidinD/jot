@@ -9,6 +9,8 @@ import { emphasisFor } from '@shared/tagEmphasis'
 import { PinIcon } from '@shared/PinIcon'
 import { TagChips } from './TagChips'
 import { SubtaskList } from './SubtaskList'
+import { CardMenu, useCardMenu } from '@shared/CardMenu'
+import { todoReference } from '@shared/reference'
 
 const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
 
@@ -44,6 +46,7 @@ export function TodoItem({
   onStopEdit
 }: TodoItemProps): JSX.Element {
   const [expanded, setExpanded] = useState(false)
+  const cardMenu = useCardMenu()
   const isEditing = editingId === todo.id
   // The whole row is the drag target (grabbable everywhere), so disable drag
   // while editing — otherwise selecting text in the edit input would drag.
@@ -105,6 +108,7 @@ export function TodoItem({
             onSelect(todo.id)
           }
         }}
+        onContextMenu={(e) => cardMenu.open(e, { id: todo.id, text: todo.text })}
         {...attributes}
         {...listeners}
       >
@@ -215,6 +219,14 @@ export function TodoItem({
         <li className="subtask-panel-row">
           <SubtaskList parentId={todo.id} subtasks={subtasks} onSelect={onSelect} />
         </li>
+      ) : null}
+      {cardMenu.menu !== null ? (
+        <CardMenu
+          at={cardMenu.menu.at}
+          todoId={cardMenu.menu.target.id}
+          reference={todoReference(cardMenu.menu.target.id, cardMenu.menu.target.text)}
+          onClose={cardMenu.close}
+        />
       ) : null}
     </>
   )

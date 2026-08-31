@@ -13,6 +13,7 @@ top of your list. The popover dismisses and focus returns to where you were.
 - Add / complete / delete todos, newest on top
 - Completed items collapse into a "Completed" section with one-click clear
 - Local-first storage (`todos.json` in the app's userData folder)
+- Right-click any card for its reference (`jot:<id> "text"`), to paste into a conversation
 - External agent integration via watched JSON file; see `INTEGRATION.md`
 - Storage seam ready for a future cloud-sync adapter (Cloudflare Workers + D1)
 
@@ -64,5 +65,6 @@ Produces an NSIS installer under `dist/`.
 | `src/renderer/src/main/` | Main list UI (React) |
 | `src/renderer/src/capture/` | Quick-capture popover UI (React) |
 | `src/renderer/src/pinboard/` | Pinned-todos desktop panel UI (React) |
+| `src/renderer/src/shared/` | Pieces used by more than one of those (card menu, tags, dates) |
 
 See [DECISIONS.md](DECISIONS.md) for the architecture rationale.

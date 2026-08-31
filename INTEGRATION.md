@@ -127,6 +127,22 @@ When an external tool edits the file:
 
 That keeps writes atomic and avoids partial JSON if the process is interrupted.
 
+## Referring to one card
+
+Right-clicking a card in Jot copies a reference to it:
+
+```
+jot:7e2c1f80-2f3b-4a51-9a1f-2b3c4d5e6f70 "Ship the release"
+```
+
+The uuid is the todo's `id` in this file — look it up directly, and ignore the
+quoted text, which is a copy of `text` at the moment it was copied and is there
+so the person pasting can see they grabbed the right card. Subtasks have ids of
+their own and are referenced the same way.
+
+Nib uses the same shape for notes (`nib:<noteId> "Title"`), so a reference that
+arrives in a conversation says which app it belongs to.
+
 ## What Jot does on external changes
 
 Jot debounces filesystem events, reloads the JSON file, and refreshes the UI if

@@ -3,6 +3,51 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-08-31 — A card hands over its own id, not a new number
+
+**Decided.** Right-clicking a card offers "Copy reference", which puts
+`jot:<todoId> "text"` on the clipboard. The id is the todo's own — the key every
+external agent already addresses it by in `todos.json`.
+
+**Ported from Nib**, where the same gesture on a note copies `nib:<noteId>`. The
+point of keeping the shape identical is that a reference to a note and a
+reference to a card read alike, so neither has to be explained when it lands in a
+conversation.
+
+**Rejected: a short human-friendly number.** A second identifier for the same
+todo is a second thing that can drift out of step with the first — the reason a
+list carries `repoPath` rather than being matched on its name. A long ugly id
+that cannot drift beats a short one that can.
+
+**The text travels with it** so the person pasting can see they copied the right
+card. It is decoration for the reader, not part of the address.
+
+**The id is shown as well as copied**, monospaced and selectable, because
+sometimes the answer is to read it out rather than paste it. `body` turns
+selection off app-wide, so this one place turns it back on.
+
+**Every surface that shows a card answers the gesture**: list rows, board cards
+and subtask rows. A subtask is a real todo with its own id, and its row sits
+INSIDE its parent's — so the handler stops propagation and the innermost card
+wins. Without that, right-clicking a subtask would copy the parent's id, which is
+the kind of wrong that looks right.
+
+**Portalled to `<body>`, unlike Nib's**, which renders where it is used. Every
+card here is a dnd-kit sortable and dnd-kit writes a `transform` onto the element
+it drags; a transformed ancestor makes `position: fixed` resolve against the CARD
+instead of the window. The portal removes the question rather than answering it.
+
+**The clipboard write goes through the main process** (`JotApi.copyText`, optional
+in the same way and for the same reason as `setTodoPinned` — Helm's embedded board
+brings its own bridge and falls back to `navigator.clipboard`).
+
+That indirection is not theoretical tidiness. The first e2e run of this menu
+caught `navigator.clipboard.writeText` rejecting with "Document is not focused"
+while the row cheerfully said **Copied** — a fire-and-forget promise, nothing
+thrown where the copy was asked for, and the clipboard still holding whatever it
+held before. The copy is now awaited and the row reports what actually happened;
+on failure the menu stays open, because the id is right there to select by hand.
+
 ## 2026-08-23 — Open ring stays, and the icon becomes a generated multi-size .ico
 
 Four candidate marks were drawn up (Iota, a written tick, a jotted list, and a

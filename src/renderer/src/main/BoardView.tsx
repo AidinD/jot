@@ -11,6 +11,8 @@ import { PinIcon } from '@shared/PinIcon'
 import { TagChips } from './TagChips'
 import { PriorityBand } from './PriorityBand'
 import { SubtaskList } from './SubtaskList'
+import { CardMenu, useCardMenu } from '@shared/CardMenu'
+import { todoReference } from '@shared/reference'
 
 /** Group todos by priority, ascending (lower number first). */
 function groupByPriority(todos: Todo[]): { priority: number; todos: Todo[] }[] {
@@ -199,6 +201,7 @@ function BoardCard({
   dropEdge: 'top' | 'bottom' | null
 }): JSX.Element {
   const [expanded, setExpanded] = useState(false)
+  const cardMenu = useCardMenu()
   // useSortable, not useDraggable: a board card must have an ORDER within its
   // column, otherwise dropping it can only change status/priority and never
   // position - which is why intra-priority sorting simply did not exist in board
@@ -228,6 +231,7 @@ function BoardCard({
       {...listeners}
       className={`board-card${emphasis !== null ? ' tag-emphasised' : ''}${isDragging ? ' dragging' : ''}${dropEdge === 'top' ? ' drop-before' : dropEdge === 'bottom' ? ' drop-after' : ''}`}
       onClick={() => onSelect(todo.id)}
+      onContextMenu={(e) => cardMenu.open(e, { id: todo.id, text: todo.text })}
     >
       <button
         className="board-card-remove"
@@ -297,6 +301,14 @@ function BoardCard({
       </div>
       {todo.description ? (
         <div className="board-card-desc">{todo.description}</div>
+      ) : null}
+      {cardMenu.menu !== null ? (
+        <CardMenu
+          at={cardMenu.menu.at}
+          todoId={cardMenu.menu.target.id}
+          reference={todoReference(cardMenu.menu.target.id, cardMenu.menu.target.text)}
+          onClose={cardMenu.close}
+        />
       ) : null}
     </div>
   )

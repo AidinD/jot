@@ -26,6 +26,9 @@ const jotApi = {
   setTodoPinned: (id: string, pinned: boolean): Promise<void> => {
     return ipcRenderer.invoke('todos:setPinned', id, pinned)
   },
+  copyText: (text: string): Promise<void> => {
+    return ipcRenderer.invoke('clipboard:write', text)
+  },
   addSubtask: (parentId: string, text: string): Promise<string> => {
     return ipcRenderer.invoke('todos:addSubtask', parentId, text)
   },
