@@ -96,7 +96,10 @@ only offers an update when the version number increases. Bump to X+1 instead.
 
 ## Task tracking
 
-This repo has a matching "Jot" category on the Jot board itself
-(`D:\YourSyncedFolder\jot\todos.json`). Track development work there: create or claim a task
-and set it to `in-progress` at the start, then move it to `review` when done —
-never `done` (Aidin confirms and closes).
+No category on the Jot board itself (`D:\YourSyncedFolder\jot\todos.json`) currently tracks
+this repo's own development work - check that file's `categories` list before assuming
+otherwise. A "Jot" category existed and was used for exactly that, but it has since been
+deleted, taking its still-open todos with it. If a category covering this repo exists when
+you read this, use it the way other repos here do: create or claim a task and set it to
+`in-progress` at the start, then move it to `review` when done - never `done` (Aidin
+confirms and closes).
