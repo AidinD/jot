@@ -3,6 +3,71 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-09-02 - An MCP server, because a refusal is the feature
+
+**Decided.** Jot exposes the board as MCP tools from a standalone Node process
+(`src/mcp/`), reading and writing the same `todos.json` as the app. Reads: the
+lists, tasks filtered by list/status/parent, one task in full. Writes: create a
+task, add a subtask, set status, description, priority. Full rationale and the
+tool table in `docs/mcp.md`.
+
+**It is not a nicer front door for `INTEGRATION.md`.** Some agent seats are
+denied every file-writing tool at the hook level and exempt MCP tools. The
+alternative - a guard that allows writes inside one folder - was rejected because
+a path-based guard allows ANY write inside that folder, including an invalid one.
+This surface can refuse, and that is the whole reason it exists.
+
+**What makes an invalid write worth refusing is that it does not fail.** A task
+filed under a `categoryId` that does not exist is in the file and in no view of
+the app. A `status` the app does not know collapses to `open` the next time
+`normalizeTodo` sees it, undoing the move somebody asked for. A subtask hung
+under another subtask is written and never rendered. None of those crashes, which
+is what makes them expensive - so each is a named refusal with a message that
+says what would have been right.
+
+**One of those refusals is not in the app.** `TodoStore.addSubtask` does not
+check that the parent is a root task; the UI only offers the action on root
+cards, so the invariant lives in the renderer. There is no renderer here, so it
+had to be checked on this surface or nowhere.
+
+**Two writers, one file, and no lock.** Every write re-checks the file's content
+HASH immediately before the atomic rename, and re-reads and re-applies the
+mutation if the board moved in that window. Copied from Helm's Jot bridge
+(`mutateJotFile`), which learned it the hard way: size and mtime cannot see the
+common shape of a real concurrent edit, because a drag-reorder is a pure array
+permutation and `open` -> `done` is the same number of characters. Only a board
+that keeps moving is refused. A lost write is worse than a refused one - nobody
+knows to redo it.
+
+**Plain JavaScript, not TypeScript, and no build step.** This is a process a
+client STARTS with `node src/mcp/server.js`. Importing `dist-core` would put a
+build between an agent and the board, and its failure mode is the one this repo
+keeps getting bitten by: a green start against stale code. `scripts/` is already
+plain `.mjs` for the same reason.
+
+**Nothing is normalised on the way through.** The parsed document is kept whole
+and only the `todos` array is touched, so unknown fields survive (which
+`INTEGRATION.md` asks of external writers) and the legacy bare-array format stays
+a bare array. Specifically: an ABSENT `tags` key means "seed the defaults on next
+load" to the app, and writing `[]` would cancel that forever.
+
+**An unreadable board is refused rather than replaced.** `keel/storage`'s
+`readJsonFile` returns a fallback for an unparseable file, which is right for a
+reader and wrong for a writer - this process would treat a half-synced file or a
+sync conflict copy as an empty board and write that emptiness over it.
+
+**Rejected: delete, pin and tag tools.** Removing a list also deletes every task
+on it, unrecoverably. `pinned` makes an always-on-top panel appear on the user's
+desktop, which is a claim on their attention made by something they are not
+looking at. Tags carry conventions about scope, and a write path would settle by
+accident a question about them that is not settled.
+
+**`@modelcontextprotocol/sdk` and `keel` are both DEV dependencies**, even though
+this runtime entry point imports them. `externalizeDepsPlugin` externalises
+`dependencies` only, so moving either one there would change what the packaged
+app resolves at runtime - and for keel that is a known failure with nothing in
+the log. The server runs from a checkout, where devDependencies are installed.
+
 ## 2026-08-31 — A card hands over its own id, not a new number
 
 **Decided.** Right-clicking a card offers "Copy reference", which puts

@@ -14,7 +14,8 @@ top of your list. The popover dismisses and focus returns to where you were.
 - Completed items collapse into a "Completed" section with one-click clear
 - Local-first storage (`todos.json` in the app's userData folder)
 - Right-click any card - list, board, subtask or pinned - for its reference (`jot:<id> "text"`)
-- External agent integration via watched JSON file; see `INTEGRATION.md`
+- External agent integration two ways: the watched JSON file (`INTEGRATION.md`),
+  or an MCP server that refuses an invalid write (`docs/mcp.md`)
 - Storage seam ready for a future cloud-sync adapter (Cloudflare Workers + D1)
 
 ## Develop
@@ -66,5 +67,6 @@ Produces an NSIS installer under `dist/`.
 | `src/renderer/src/capture/` | Quick-capture popover UI (React) |
 | `src/renderer/src/pinboard/` | Pinned-todos desktop panel UI (React) |
 | `src/renderer/src/shared/` | Pieces used by more than one of those (card menu, tags, dates) |
+| `src/mcp/` | MCP server over the same `todos.json`; see [docs/mcp.md](docs/mcp.md) |
 
 See [DECISIONS.md](DECISIONS.md) for the architecture rationale.

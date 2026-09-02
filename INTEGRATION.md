@@ -4,6 +4,14 @@ Jot keeps its canonical app state in a local JSON file and watches that file
 for external edits. That means external agents do not need MCP support to read
 or write data.
 
+**There is also an MCP server** over the same file - `docs/mcp.md`. Prefer it
+when the writer is an agent: every write it accepts is validated first, and the
+ones described further down this page as things you must get right (a real
+`categoryId`, a status from the known set, valid JSON, an atomic write) are
+refused with a message instead of landing in the file. This page stays the
+contract for a tool that cannot speak MCP, and for understanding what the file
+actually holds.
+
 ## Data location
 
 The file lives under Electron's `userData` folder:

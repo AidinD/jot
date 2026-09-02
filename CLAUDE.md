@@ -8,12 +8,18 @@ If `HANDOFF.md` exists, read it FIRST — it's the latest session's current stat
 + what's next (overwritten each handoff, so always small). Before making changes,
 read `DECISIONS.md` (architecture rationale — the *why* behind the current shape)
 and `README.md` (file-by-file layout). `INTEGRATION.md` is the external-agent
-contract for `todos.json`; `BACKLOG.md` holds deferred ideas.
+contract for `todos.json` and `docs/mcp.md` is the MCP surface over the same file;
+`BACKLOG.md` holds deferred ideas.
 
 ## Build & run
 
 - `npm run dev` — dev build; mounts the tray and registers the global shortcut.
   Closing the window keeps the app running in the tray.
+- `npm run test:mcp` / `npm run test:mcp:e2e` - the MCP surface, and the real
+  server process over stdio. Run both after touching `src/mcp/` or `src/core/`;
+  the first also fails if the status list in the two places ever drifts apart.
+- `npm run mcp` - starts the MCP server in this terminal (stderr says which board
+  it resolved).
 - `npm run package` — produces an NSIS Windows installer under `dist/`.
 
 **Jot depends on `keel`** (github.com/AidinD/keel), the suite's shared layer,
