@@ -59,9 +59,11 @@ Produces an NSIS installer under `dist/`.
 | Path | Purpose |
 | --- | --- |
 | `src/main/index.ts` | App lifecycle, tray, global shortcut, IPC wiring |
-| `src/main/store.ts` | In-memory todo store, persistence, change broadcast |
-| `src/main/storage.ts` | `StorageAdapter` interface + local JSON impl (sync seam) |
 | `src/main/windows.ts` | Main window + capture popover creation/positioning |
+| `src/main/data-dir.ts` | Where the data lives, and the one-time move into `JOT_DATA_DIR` |
+| `src/core/store.ts` | In-memory todo store, persistence, change broadcast |
+| `src/core/storage.ts` | `StorageAdapter` interface + local JSON impl (sync seam) |
+| `src/core/types.ts` | `Todo`, `Category`, `Tag`, `JotState` and the IPC surface |
 | `src/preload/index.ts` | `window.jot` / `window.capture` IPC bridge |
 | `src/renderer/src/main/` | Main list UI (React) |
 | `src/renderer/src/capture/` | Quick-capture popover UI (React) |
