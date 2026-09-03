@@ -1,6 +1,6 @@
 {
   "name": "jot",
-  "version": "1.5.42",
+  "version": "1.5.43",
   "description": "A keyboard-first quick-capture todo app",
   "main": "./out/main/index.js",
   "author": "Aidin",
@@ -24,7 +24,8 @@
     "release": "node scripts/release.mjs",
     "mcp": "node src/mcp/server.js",
     "test:mcp": "node scripts/test-mcp-tools.mjs",
-    "test:mcp:e2e": "node scripts/test-mcp-e2e.mjs"
+    "test:mcp:e2e": "node scripts/test-mcp-e2e.mjs",
+    "test:mcp:concurrent": "node scripts/test-mcp-concurrent-writes.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",

@@ -41,10 +41,34 @@ import path from 'node:path'
 // only, so moving keel there would leave `keel/storage` unresolved in the packaged
 // app - a failure with nothing in the log (see CLAUDE.md). Nothing is lost here,
 // because this server runs from a checkout where `npm install` has run.
-import { resolveDataDir, stripBom, writeFileAtomicSync } from 'keel/storage'
+import { jitteredBackoffMs, resolveDataDir, sleepSync, stripBom, writeFileAtomicSync } from 'keel/storage'
 
-/** How many times a mutation is re-applied after losing a race with the app. */
-const MAX_MUTATE_ATTEMPTS = 3
+/**
+ * How many times a mutation is re-applied after losing a race with the app, and how
+ * long those attempts may take in total.
+ *
+ * THREE ATTEMPTS WITH NO BACKOFF was three attempts inside the same microsecond,
+ * and it was accidentally propped up by a bug elsewhere: keel's writer used to spin
+ * its own four attempts on a refused guard, writing and deleting a temp file each
+ * time, which acted as a crude delay between these three. When that spinning was
+ * removed (correctly - it re-checked a stale expectation), an independent review
+ * measured this loop refusing 3-11% of writes with six competing processes, against
+ * 0% for Helm's equivalent loop, which had a jittered backoff and eight attempts.
+ *
+ * HONEST ABOUT THE EVIDENCE: that 3-11% is no longer reproducible. It was measured
+ * against a version of keel that wrote its temp file BEFORE taking the write lock;
+ * moving the temp inside the lock serialises writers for the whole write and cut
+ * the collision rate for every caller. Re-measured afterwards at 8 processes x 40
+ * writes, three attempts with no backoff and eight with jitter came out the same,
+ * inside the noise. So this is a precaution, not a measured fix - kept because the
+ * reasoning holds independently of whether today's timings expose it: two writers
+ * backing off on an identical schedule stay in lockstep and keep colliding, and
+ * attempts multiply, since each one can wait for the lock and retry a
+ * Dropbox-locked rename. The budget bounds the whole thing in TIME, not just in
+ * attempts.
+ */
+const MAX_MUTATE_ATTEMPTS = 8
+const MUTATE_BUDGET_MS = 3000
 
 /**
  * Where Electron would put `userData` for this app.
@@ -207,6 +231,7 @@ export function readBoard(todosPath) {
  */
 export function mutateBoard(todosPath, mutate) {
   let lastWriteError = 'unknown'
+  const deadline = Date.now() + MUTATE_BUDGET_MS
 
   for (let attempt = 0; attempt < MAX_MUTATE_ATTEMPTS; attempt += 1) {
     const read = readBoard(todosPath)
@@ -244,6 +269,16 @@ export function mutateBoard(todosPath, mutate) {
       // read and the mutation cannot help, and the message already says what to do.
       return { error: `Could not write to Jot's board: ${written.error}` }
     }
+    if (attempt >= MAX_MUTATE_ATTEMPTS - 1) {
+      break
+    }
+    // JITTERED - see MAX_MUTATE_ATTEMPTS. Without a wait here, all the attempts
+    // land inside the window the competing writer is still working in.
+    const wait = jitteredBackoffMs(attempt)
+    if (Date.now() + wait > deadline) {
+      break // out of time rather than out of attempts; same safe outcome
+    }
+    sleepSync(wait)
   }
 
   return {
