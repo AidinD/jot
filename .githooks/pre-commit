@@ -7,3 +7,4 @@
 # Skip a single commit with: git commit --no-verify
 
 node .githooks/no-leaky-assets.mjs || exit 1
+node .githooks/require-file-header.mjs || exit 1
