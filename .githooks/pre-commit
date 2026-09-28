@@ -8,3 +8,4 @@
 
 node .githooks/no-leaky-assets.mjs || exit 1
 node .githooks/require-file-header.mjs || exit 1
+node .githooks/no-generic-names.mjs || exit 1
