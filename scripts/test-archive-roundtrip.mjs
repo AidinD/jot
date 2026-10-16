@@ -112,6 +112,25 @@ check(
   null
 )
 
+// --- a duplicated id must not restore twice --------------------------------
+const dupeSource = (await afterOrphan.readArchive()).length
+await afterOrphan.archiveTodo(subtaskId)
+const onceArchived = await afterOrphan.readArchive()
+await fs.writeFile(
+  archivePath,
+  JSON.stringify({ todos: [...onceArchived, ...onceArchived] }, null, 2),
+  'utf-8'
+)
+const afterDupe = await freshStore()
+check('en dubblett listas en gång', (await afterDupe.readArchive()).length, onceArchived.length)
+check('en dubblett återställs en gång', await afterDupe.restoreFromArchive(subtaskId), 1)
+check(
+  'bara ett kort landar på brädet',
+  afterDupe.getState().todos.filter((t) => t.id === subtaskId).length,
+  1
+)
+void dupeSource
+
 // --- a missing id is not an error, it is a miss -----------------------------
 check('okänt id ger 0', await afterOrphan.restoreFromArchive(randomUUID()), 0)
 

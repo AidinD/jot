@@ -403,9 +403,22 @@ export class TodoStore {
         : parsed !== null && typeof parsed === 'object' && Array.isArray(parsed.todos)
           ? parsed.todos
           : []
-      return list.filter((todo: unknown): todo is ArchivedTodo => {
+      const valid = list.filter((todo: unknown): todo is ArchivedTodo => {
         return todo !== null && typeof todo === 'object' && typeof (todo as Todo).id === 'string'
       })
+      // Collapse repeated ids, keeping the newest copy. archive.json has 123
+      // duplicated ids as of 2026-10-16, most of them from a sweep in the days
+      // before anything could read the file - so nothing ever surfaced them.
+      // Without this the archive lists a card twice and restoring it puts two
+      // identical cards back on the board.
+      const newestById = new Map<string, ArchivedTodo>()
+      for (const todo of valid) {
+        const held = newestById.get(todo.id)
+        if (held === undefined || (todo.archivedAt ?? 0) > (held.archivedAt ?? 0)) {
+          newestById.set(todo.id, todo)
+        }
+      }
+      return [...newestById.values()]
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code
       if (code === 'ENOENT') {
