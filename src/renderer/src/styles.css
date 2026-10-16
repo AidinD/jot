@@ -2371,3 +2371,86 @@ body {
   user-select: text;
   cursor: text;
 }
+
+/* The archive modal. Wider than the default .modal because it lists cards with
+   their category and date, and a 380px column turns every row into two lines. */
+.modal.archive-view {
+  width: min(620px, calc(100vw - 48px));
+  display: flex;
+  flex-direction: column;
+  max-height: min(72vh, 680px);
+}
+
+.archive-search {
+  margin-bottom: 10px;
+}
+
+.archive-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.archive-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 8px;
+  border-radius: 6px;
+}
+
+.archive-row:hover {
+  background: var(--surface-hover, rgba(255, 255, 255, 0.04));
+}
+
+.archive-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.archive-row-text {
+  color: var(--text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.archive-row-meta {
+  color: var(--text-muted, #8b93a7);
+  font-size: 11px;
+}
+
+.archive-empty {
+  color: var(--text-muted, #8b93a7);
+  font-size: 13px;
+  padding: 18px 2px;
+  margin: 0;
+}
+
+/* Archive sits immediately left of Delete so the reversible option is in front
+   of you at the moment you reach for the destructive one. It takes over the
+   auto margin that used to push Delete right, otherwise two auto margins split
+   the free space and leave Archive stranded mid-row. */
+.archive-button {
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  line-height: 0;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: auto;
+  opacity: 0.75;
+}
+
+.archive-button:hover {
+  color: var(--accent);
+  opacity: 1;
+}
+
+.archive-button + .remove-button {
+  margin-left: 0;
+}

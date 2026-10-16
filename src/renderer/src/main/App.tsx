@@ -25,6 +25,7 @@ import { DetailPanel } from './DetailPanel'
 import { BoardView, boardColumnOrder } from './BoardView'
 import { SortMenu } from './SortMenu'
 import { ConfirmModal } from './ConfirmModal'
+import { ArchiveView } from './ArchiveView'
 import { TagManager } from './TagManager'
 import { PriorityBand } from './PriorityBand'
 
@@ -125,6 +126,7 @@ export function App(): JSX.Element {
   const [selectedTodoId, setSelectedTodoId] = useState<string | null>(null)
   const [pendingDeleteCatId, setPendingDeleteCatId] = useState<string | null>(null)
   const [tagManagerOpen, setTagManagerOpen] = useState(false)
+  const [archiveOpen, setArchiveOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [editingTodoId, setEditingTodoId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -731,6 +733,29 @@ export function App(): JSX.Element {
               ▦ Advanced
             </button>
           </div>
+          <button
+            className="icon-btn"
+            onClick={() => setArchiveOpen(true)}
+            title="Open the archive"
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <rect
+                x="3"
+                y="4"
+                width="18"
+                height="4"
+                rx="1"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              />
+              <path
+                d="M5 8v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              />
+              <path d="M10 12h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
           <button className="icon-btn" onClick={() => void handleCopy()} title="Copy all visible tasks">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
@@ -1105,6 +1130,9 @@ export function App(): JSX.Element {
         />
       ) : null}
 
+      {archiveOpen ? (
+        <ArchiveView categories={state.categories} onClose={() => setArchiveOpen(false)} />
+      ) : null}
       {tagManagerOpen ? (
         <TagManager tags={state.tags} onClose={() => setTagManagerOpen(false)} />
       ) : null}
