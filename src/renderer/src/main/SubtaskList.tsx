@@ -75,6 +75,37 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
               />
               <span className={`subtask-text${done ? ' done' : ''}`}>{subtask.text}</span>
               <button
+                className="subtask-archive"
+                title="Archive subtask — off the board, kept in the archive"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void jotApi().archiveTodo(subtask.id)
+                }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect
+                    x="3"
+                    y="4"
+                    width="18"
+                    height="4"
+                    rx="1"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M5 8v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  />
+                  <path
+                    d="M10 12h4"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+              <button
                 className="subtask-remove"
                 title="Delete subtask"
                 onClick={(e) => {
