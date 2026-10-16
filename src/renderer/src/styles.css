@@ -2454,3 +2454,33 @@ body {
 .archive-button + .remove-button {
   margin-left: 0;
 }
+
+/* Advanced view's card gets the same pairing as the list row: Archive sits
+   immediately left of Delete, both revealed on hover. Without it the board
+   view had no way to archive a single card, which is the view actually used. */
+.board-card-archive {
+  position: absolute;
+  top: 4px;
+  right: 26px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  line-height: 0;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.board-card:hover .board-card-archive {
+  opacity: 1;
+}
+
+.board-card-archive:hover {
+  color: var(--accent);
+}
