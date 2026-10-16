@@ -25,6 +25,16 @@ export interface Todo {
   completedAt: number | null
 }
 
+/**
+ * A todo that has left the active board for archive.json. Same shape plus when
+ * it left, so the archive can be listed newest-first without re-sorting on
+ * fields that mean something else (completedAt is when it was finished, which
+ * is often months before it was archived).
+ */
+export interface ArchivedTodo extends Todo {
+  archivedAt: number
+}
+
 export interface Category {
   id: string
   name: string
@@ -126,6 +136,12 @@ export interface JotApi {
   reorderTodos: (orderedVisibleIds: string[]) => Promise<void>
   clearCompleted: () => Promise<void>
   archiveCompleted: () => Promise<number>
+  /** Everything that has left the board, newest first. */
+  readArchive: () => Promise<ArchivedTodo[]>
+  /** Archive one todo and its subtasks. Returns how many were archived. */
+  archiveTodo: (id: string) => Promise<number>
+  /** Bring one archived todo, and anything archived under it, back onto the board. */
+  restoreFromArchive: (id: string) => Promise<number>
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   setCategoryRepoPath: (id: string, repoPath: string) => Promise<void>

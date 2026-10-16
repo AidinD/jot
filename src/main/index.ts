@@ -338,6 +338,15 @@ function registerIpc(): void {
   ipcMain.handle('todos:archiveCompleted', () => {
     return store.archiveCompleted()
   })
+  ipcMain.handle('todos:readArchive', () => {
+    return store.readArchive()
+  })
+  ipcMain.handle('todos:archiveTodo', (_event, id: string) => {
+    return store.archiveTodo(id)
+  })
+  ipcMain.handle('todos:restoreFromArchive', (_event, id: string) => {
+    return store.restoreFromArchive(id)
+  })
 
   ipcMain.handle('categories:add', (_event, name: string) => {
     return store.addCategory(name)

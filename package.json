@@ -1,6 +1,6 @@
 {
   "name": "jot",
-  "version": "1.5.45",
+  "version": "1.5.46",
   "description": "A keyboard-first quick-capture todo app",
   "main": "./out/main/index.js",
   "author": "Aidin",
@@ -23,6 +23,7 @@
     "prepare": "git config core.hooksPath .githooks",
     "release": "node scripts/release.mjs",
     "mcp": "node src/mcp/server.js",
+    "test:archive": "npm run build:core && node scripts/test-archive-roundtrip.mjs",
     "test:mcp": "node scripts/test-mcp-tools.mjs",
     "test:mcp:e2e": "node scripts/test-mcp-e2e.mjs",
     "test:mcp:concurrent": "node scripts/test-mcp-concurrent-writes.mjs"

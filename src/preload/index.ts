@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { windowControlsBridge } from 'keel/window'
-import type { JotState, TagEmphasis, TodoStatus } from '../core/types'
+import type { ArchivedTodo, JotState, TagEmphasis, TodoStatus } from '../core/types'
 
 const jotApi = {
   getState: (): Promise<JotState> => {
@@ -61,6 +61,15 @@ const jotApi = {
   },
   archiveCompleted: (): Promise<number> => {
     return ipcRenderer.invoke('todos:archiveCompleted')
+  },
+  readArchive: (): Promise<ArchivedTodo[]> => {
+    return ipcRenderer.invoke('todos:readArchive')
+  },
+  archiveTodo: (id: string): Promise<number> => {
+    return ipcRenderer.invoke('todos:archiveTodo', id)
+  },
+  restoreFromArchive: (id: string): Promise<number> => {
+    return ipcRenderer.invoke('todos:restoreFromArchive', id)
   },
   addCategory: (name: string): Promise<string> => {
     return ipcRenderer.invoke('categories:add', name)

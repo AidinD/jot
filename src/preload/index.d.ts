@@ -1,4 +1,4 @@
-import type { JotState, TagEmphasis, TodoStatus } from '../core/types'
+import type { ArchivedTodo, JotState, TagEmphasis, TodoStatus } from '../core/types'
 
 interface JotBridge {
   getState: () => Promise<JotState>
@@ -24,6 +24,9 @@ interface JotBridge {
   reorderTodos: (orderedVisibleIds: string[]) => Promise<void>
   clearCompleted: () => Promise<void>
   archiveCompleted: () => Promise<number>
+  readArchive: () => Promise<ArchivedTodo[]>
+  archiveTodo: (id: string) => Promise<number>
+  restoreFromArchive: (id: string) => Promise<number>
   addCategory: (name: string) => Promise<string>
   renameCategory: (id: string, name: string) => Promise<void>
   setCategoryRepoPath: (id: string, repoPath: string) => Promise<void>

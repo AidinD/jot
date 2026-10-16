@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { promises as fs } from 'fs'
 import { dirname, join, extname } from 'path'
-import type { Category, JotState, Tag, TagEmphasis, Todo, TodoStatus } from './types'
+import type { ArchivedTodo, Category, JotState, Tag, TagEmphasis, Todo, TodoStatus } from './types'
 import { writeFileAtomic, type StorageAdapter } from './storage'
 
 type ChangeListener = (state: JotState) => void
@@ -385,50 +385,124 @@ export class TodoStore {
     await this.persist()
   }
 
+  private get archivePath(): string {
+    return join(this.dataDir, 'archive.json')
+  }
+
   /**
-   * Move completed todos out of the active list into archive.json (newest
-   * first), so the working file stays small without losing history. Unlike
-   * clearCompleted this preserves the data. Returns how many were archived.
+   * Read archive.json. Tolerates both shapes the file has had - a bare array
+   * and { todos: [...] } - and a UTF-8 BOM, because it is a file on disk that
+   * other tools may have written, not a structure this process owns.
+   */
+  private async loadArchive(): Promise<ArchivedTodo[]> {
+    try {
+      const raw = await fs.readFile(this.archivePath, 'utf-8')
+      const parsed = JSON.parse(raw.replace(/^﻿/, ''))
+      const list = Array.isArray(parsed)
+        ? parsed
+        : parsed !== null && typeof parsed === 'object' && Array.isArray(parsed.todos)
+          ? parsed.todos
+          : []
+      return list.filter((todo: unknown): todo is ArchivedTodo => {
+        return todo !== null && typeof todo === 'object' && typeof (todo as Todo).id === 'string'
+      })
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (code === 'ENOENT') {
+        return []
+      }
+      throw error
+    }
+  }
+
+  private async saveArchive(todos: ArchivedTodo[]): Promise<void> {
+    await writeFileAtomic(this.archivePath, JSON.stringify({ todos }, null, 2))
+  }
+
+  /**
+   * Everything that has left the active board, newest first. The reason the
+   * archive is readable at all: without this, archiving is indistinguishable
+   * from deleting, so nobody archives and the board grows forever.
+   */
+  async readArchive(): Promise<ArchivedTodo[]> {
+    return this.loadArchive()
+  }
+
+  /**
+   * Move the given todos out of the active list and into archive.json, newest
+   * first. Shared by archiveCompleted and archiveTodo so the cascade rule and
+   * the file format have exactly one implementation.
+   */
+  private async archiveTodos(ids: Set<string>): Promise<number> {
+    // Cascade: subtasks of an archived parent go with it (even if not themselves
+    // done), so archiving a task never orphans its subtasks.
+    const leaving = this.state.todos.filter((todo) => {
+      return ids.has(todo.id) || (todo.parentId !== null && ids.has(todo.parentId))
+    })
+    if (leaving.length === 0) {
+      return 0
+    }
+
+    const archivedAt = Date.now()
+    const archived = await this.loadArchive()
+    await this.saveArchive([...leaving.map((todo) => ({ ...todo, archivedAt })), ...archived])
+
+    const leavingIds = new Set(leaving.map((todo) => todo.id))
+    this.state.todos = this.state.todos.filter((todo) => !leavingIds.has(todo.id))
+    await this.persist()
+    return leaving.length
+  }
+
+  /**
+   * Move completed todos out of the active list into archive.json, so the
+   * working file stays small without losing history. Unlike clearCompleted
+   * this preserves the data. Returns how many were archived.
    */
   async archiveCompleted(): Promise<number> {
     const doneIds = new Set(
       this.state.todos.filter((todo) => todo.status === 'done').map((todo) => todo.id)
     )
-    // Cascade: subtasks of a done parent are archived alongside it (even if not
-    // themselves done), so archiving a finished task never orphans its subtasks.
-    const completed = this.state.todos.filter((todo) => {
-      return doneIds.has(todo.id) || (todo.parentId !== null && doneIds.has(todo.parentId))
-    })
-    if (completed.length === 0) {
+    return this.archiveTodos(doneIds)
+  }
+
+  /**
+   * Archive one todo and its subtasks. Deliberately not restricted to done
+   * todos: the caller picked this card, and a board is cleared one finished
+   * thread at a time more often than in a sweep.
+   */
+  async archiveTodo(id: string): Promise<number> {
+    return this.archiveTodos(new Set([id]))
+  }
+
+  /**
+   * Bring one archived todo, and anything archived under it, back onto the
+   * board. This is what makes archiving safe to do: a thread that goes quiet
+   * for a month and then answers can be picked up where it was left.
+   *
+   * Returns how many todos came back; 0 if the id is not in the archive.
+   */
+  async restoreFromArchive(id: string): Promise<number> {
+    const archived = await this.loadArchive()
+    const returning = archived.filter((todo) => todo.id === id || todo.parentId === id)
+    if (returning.length === 0) {
       return 0
     }
 
-    const archivePath = join(this.dataDir, 'archive.json')
-    let archived: (Todo & { archivedAt?: number })[] = []
-    try {
-      const raw = await fs.readFile(archivePath, 'utf-8')
-      const parsed = JSON.parse(raw.replace(/^﻿/, ''))
-      if (Array.isArray(parsed)) {
-        archived = parsed
-      } else if (parsed !== null && typeof parsed === 'object' && Array.isArray(parsed.todos)) {
-        archived = parsed.todos
-      }
-    } catch (error) {
-      const code = (error as NodeJS.ErrnoException).code
-      if (code !== 'ENOENT') {
-        throw error
-      }
-    }
+    const returningIds = new Set(returning.map((todo) => todo.id))
+    const live = new Set(this.state.todos.map((todo) => todo.id))
+    const restored = returning.map(({ archivedAt: _archivedAt, ...todo }) => {
+      // The parent may have been deleted, or may still be archived, while this
+      // todo was away. Landing it at top level keeps it visible; keeping a
+      // dangling parentId would restore it into nothing.
+      const parentFound =
+        todo.parentId !== null && (live.has(todo.parentId) || returningIds.has(todo.parentId))
+      return { ...todo, parentId: parentFound ? todo.parentId : null }
+    })
 
-    const stamped = completed.map((todo) => ({ ...todo, archivedAt: Date.now() }))
-    const next = [...stamped, ...archived]
-
-    await writeFileAtomic(archivePath, JSON.stringify({ todos: next }, null, 2))
-
-    const archivedIds = new Set(completed.map((todo) => todo.id))
-    this.state.todos = this.state.todos.filter((todo) => !archivedIds.has(todo.id))
+    await this.saveArchive(archived.filter((todo) => !returningIds.has(todo.id)))
+    this.state.todos = [...this.state.todos, ...restored]
     await this.persist()
-    return completed.length
+    return restored.length
   }
 
   async addCategory(name: string): Promise<string> {
