@@ -134,6 +134,25 @@ void dupeSource
 // --- a missing id is not an error, it is a miss -----------------------------
 check('okänt id ger 0', await afterOrphan.restoreFromArchive(randomUUID()), 0)
 
+// --- the reason archive.json held 123 duplicates ---------------------------
+// Two clicks while the first write is still in flight. Before serialisation both
+// calls computed the same card from unchanged state and wrote it twice.
+const raceStore = await freshStore()
+const racedId = await addAndGetId(raceStore, 'Dubbelklickad roll', categoryId)
+const counts = await Promise.all([raceStore.archiveTodo(racedId), raceStore.archiveTodo(racedId)])
+check('bara ett av två samtidiga anrop arkiverar', counts.sort(), [0, 1])
+check(
+  'kortet ligger en gång i arkivet',
+  (await raceStore.readArchive()).filter((todo) => todo.id === racedId).length,
+  1
+)
+const racedArchiveRaw = JSON.parse(await fs.readFile(archivePath, 'utf-8'))
+check(
+  'och en gång i filen, inte bara efter dedupliceringen',
+  racedArchiveRaw.todos.filter((todo) => todo.id === racedId).length,
+  1
+)
+
 // --- the sweep still works --------------------------------------------------
 const sweepStore = await freshStore()
 const doneId = await addAndGetId(sweepStore, 'Nordnet - avslag', categoryId)

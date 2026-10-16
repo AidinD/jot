@@ -385,6 +385,26 @@ export class TodoStore {
     await this.persist()
   }
 
+  // Archive mutations run one at a time. Each of them reads the board, reads
+  // archive.json, writes archive.json and only then updates state - two awaits
+  // during which the board still shows the card being archived. A second click
+  // in that window recomputed the same card from unchanged state and wrote it
+  // again: archive.json held 123 duplicated ids before this, including a batch
+  // of 122 written twice in one sweep and a card whose two copies are stamped
+  // 2.6 seconds apart. The window is wide because the file is megabytes and
+  // sits in a synced folder, so an atomic write there takes seconds.
+  private archiveQueue: Promise<unknown> = Promise.resolve()
+
+  private runSerialised<T>(work: () => Promise<T>): Promise<T> {
+    const run = this.archiveQueue.then(work, work)
+    // Swallowed only for the queue's own chain; the caller still sees the throw.
+    this.archiveQueue = run.then(
+      () => undefined,
+      () => undefined
+    )
+    return run
+  }
+
   private get archivePath(): string {
     return join(this.dataDir, 'archive.json')
   }
@@ -472,10 +492,12 @@ export class TodoStore {
    * this preserves the data. Returns how many were archived.
    */
   async archiveCompleted(): Promise<number> {
-    const doneIds = new Set(
-      this.state.todos.filter((todo) => todo.status === 'done').map((todo) => todo.id)
-    )
-    return this.archiveTodos(doneIds)
+    return this.runSerialised(() => {
+      const doneIds = new Set(
+        this.state.todos.filter((todo) => todo.status === 'done').map((todo) => todo.id)
+      )
+      return this.archiveTodos(doneIds)
+    })
   }
 
   /**
@@ -484,7 +506,7 @@ export class TodoStore {
    * thread at a time more often than in a sweep.
    */
   async archiveTodo(id: string): Promise<number> {
-    return this.archiveTodos(new Set([id]))
+    return this.runSerialised(() => this.archiveTodos(new Set([id])))
   }
 
   /**
@@ -495,6 +517,10 @@ export class TodoStore {
    * Returns how many todos came back; 0 if the id is not in the archive.
    */
   async restoreFromArchive(id: string): Promise<number> {
+    return this.runSerialised(() => this.restoreOne(id))
+  }
+
+  private async restoreOne(id: string): Promise<number> {
     const archived = await this.loadArchive()
     const returning = archived.filter((todo) => todo.id === id || todo.parentId === id)
     if (returning.length === 0) {
