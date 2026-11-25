@@ -3,6 +3,28 @@
 Key decisions for Jot and the reasoning behind them. See git history and the
 transcript for the step-by-step; this file is only the choices worth revisiting.
 
+## 2026-11-25 - Subtask sort is a view, kept per parent in the UI
+
+**Decided.** The subtask list has a small sort control next to the "n/m done"
+line: Manual (default, the stored order), Oldest first (`createdAt`), and A-Z
+(`Intl.Collator('sv', { numeric: true })`, so "9." sorts before "10." and å, ä, ö
+come after z). Code: `shared/subtaskSort.ts`, test: `scripts/test-subtask-sort.mjs`.
+
+**It never rewrites the stored order.** Sorting returns a copy, so Manual always
+shows what was arranged by hand. The subtask list has no drag-reorder, so there
+was nothing to disable; if one is added it must be inert while a non-manual order
+is showing.
+
+**The choice lives in `localStorage` per parent id, not in `todos.json`.** The
+file is the contract with Tend, jot-watch, the MCP server and Helm; a view
+preference is not part of that, and a new field would have to be threaded through
+every normalizer that strips unknown keys. Cost: it is per machine, so the Dropbox
+laptop/PC sync does not carry it. That matches how the main list's sort works.
+
+**Rejected.** "Newest first" - a reading list wants the order it was added in, and
+reversing is one more menu entry for no asked-for use. Not sorting done subtasks
+apart: the list has no done grouping today, so they sort with the rest.
+
 ## 2026-09-02 - An MCP server, because a refusal is the feature
 
 **Decided.** Jot exposes the board as MCP tools from a standalone Node process

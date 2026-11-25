@@ -3,6 +3,14 @@ import { useState } from 'react'
 import type { Todo, TodoStatus } from '@shared/types'
 import { CardMenu, useCardMenu } from '@shared/CardMenu'
 import { todoReference } from '@shared/reference'
+import {
+  loadSubtaskSort,
+  saveSubtaskSort,
+  sortSubtasks,
+  SUBTASK_SORT_OPTIONS,
+  type SubtaskSort
+} from '@shared/subtaskSort'
+import { SortMenu } from './SortMenu'
 
 const STATUS_CYCLE: TodoStatus[] = ['open', 'in-progress', 'review', 'done']
 
@@ -22,6 +30,12 @@ interface SubtaskListProps {
 export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps): JSX.Element {
   const [draft, setDraft] = useState('')
   const cardMenu = useCardMenu()
+  const [sortMode, setSortMode] = useState<SubtaskSort>(() => loadSubtaskSort(parentId))
+
+  function changeSort(mode: SubtaskSort): void {
+    setSortMode(mode)
+    saveSubtaskSort(parentId, mode)
+  }
 
   function commitAdd(): void {
     const text = draft.trim()
@@ -46,12 +60,19 @@ export function SubtaskList({ parentId, subtasks, onSelect }: SubtaskListProps):
   return (
     <div className="subtask-list">
       {subtasks.length > 0 ? (
-        <span className="subtask-progress">
-          {doneCount}/{subtasks.length} done
-        </span>
+        <div className="subtask-header">
+          <span className="subtask-progress">
+            {doneCount}/{subtasks.length} done
+          </span>
+          {subtasks.length > 1 ? (
+            <div className="sort-control subtask-sort" title="Sort subtasks (view only)">
+              <SortMenu value={sortMode} options={SUBTASK_SORT_OPTIONS} onChange={changeSort} />
+            </div>
+          ) : null}
+        </div>
       ) : null}
       <ul className="subtask-rows">
-        {subtasks.map((subtask) => {
+        {sortSubtasks(subtasks, sortMode).map((subtask) => {
           const done = subtask.status === 'done'
           return (
             <li

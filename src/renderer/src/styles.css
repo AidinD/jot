@@ -1835,6 +1835,18 @@ body {
   gap: 4px;
 }
 
+.subtask-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.subtask-sort .sort-trigger {
+  padding: 2px 8px;
+  font-size: 11px;
+}
+
 .subtask-progress {
   font-size: 11px;
   color: var(--text-dim);
